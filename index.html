@@ -1,0 +1,379 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Polish A1 Flashcards</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:#0d0d0d}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#eee;min-height:100vh}
+
+/* ===== Page switcher ===== */
+.page-switch{
+  position:sticky;top:0;z-index:50;
+  display:flex;gap:8px;padding:10px 12px;
+  background:#0d0d0d;border-bottom:0.5px solid #2a2a2a;
+}
+.page-btn{
+  flex:1;padding:10px 8px;border-radius:12px;border:0.5px solid #2a2a2a;
+  background:#161616;color:#888;font-size:14px;font-weight:500;
+  cursor:pointer;transition:all 0.15s;
+}
+.page-btn.active{background:#1e1e1e;color:#fff;border-color:#555}
+
+.app{padding:1rem 0.85rem 2.5rem;max-width:560px;margin:0 auto}
+
+/* ===== Theme tabs ===== */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.1rem;justify-content:center}
+.tab{padding:6px 12px;border-radius:18px;border:0.5px solid #333;background:transparent;color:#888;font-size:12px;cursor:pointer;transition:all 0.15s;white-space:nowrap}
+.tab.active{background:#1e1e1e;color:#e8e8e8;border-color:#555}
+.tab:active{transform:scale(0.96)}
+
+.hint{font-size:11px;color:#555;text-align:center;margin-bottom:1rem;letter-spacing:0.04em;text-transform:uppercase}
+
+/* ===== Card ===== */
+.scene{perspective:1000px;width:100%;margin:0 auto 1.2rem;height:min(48vh,260px);cursor:pointer;touch-action:pan-y}
+.inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform 0.45s cubic-bezier(.4,0,.2,1)}
+.inner.flipped{transform:rotateY(180deg)}
+.face{position:absolute;width:100%;height:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:18px;border:0.5px solid #2a2a2a;background:#161616;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.4rem 1.2rem;text-align:center}
+.back{transform:rotateY(180deg);background:#181818}
+.face-label{font-size:10px;text-transform:uppercase;letter-spacing:0.12em;color:#444;margin-bottom:10px}
+.polish-text{font-size:clamp(20px,6vw,26px);font-weight:600;color:#f5f5f5;margin-bottom:8px;line-height:1.35}
+.pron{font-size:13px;color:#777;font-style:italic;margin-bottom:8px}
+.keyword{display:inline-block;font-size:11px;padding:3px 12px;border-radius:12px;letter-spacing:0.03em;margin-bottom:6px}
+.theme-tag{font-size:11px;color:#444;margin-top:4px}
+.arabic-text{font-size:clamp(20px,6vw,26px);color:#e8dfc8;direction:rtl;margin-bottom:8px;line-height:1.6;font-weight:500}
+.english-text{font-size:14px;color:#666}
+.flip-hint{font-size:11px;color:#333;margin-top:12px;letter-spacing:0.06em;text-transform:uppercase}
+
+/* ===== Controls ===== */
+.controls{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:0.9rem}
+.nav-btn{flex:1;max-width:140px;padding:13px 10px;border-radius:12px;border:0.5px solid #2a2a2a;background:#161616;color:#ccc;font-size:15px;cursor:pointer;transition:all 0.15s}
+.nav-btn:active{transform:scale(0.96);background:#1e1e1e}
+.prog{font-size:13px;color:#555;min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+
+.shuffle{display:block;margin:0 auto;padding:8px 22px;border-radius:20px;border:0.5px solid #2a2a2a;background:transparent;color:#555;font-size:12px;cursor:pointer}
+.shuffle:active{background:#1a1a1a}
+
+.divider{width:32px;height:1px;background:#2a2a2a;margin:8px auto}
+
+/* ===== Reveal button for reverse mode ===== */
+.reveal-btn{
+  display:block;margin:0 auto 0.9rem;padding:11px 28px;border-radius:12px;
+  border:0.5px solid #3a3a3a;background:#1a1a1a;color:#bbb;font-size:14px;
+  cursor:pointer;letter-spacing:0.03em;
+}
+.reveal-btn:active{background:#222}
+
+@media (min-width:600px){
+  .nav-btn{font-size:14px;padding:10px 24px;max-width:160px}
+}
+</style>
+</head>
+<body>
+
+<div class="page-switch">
+  <button class="page-btn active" id="btnPage1" onclick="switchPage(1)">🇵🇱 → 🇸🇦 Learn</button>
+  <button class="page-btn" id="btnPage2" onclick="switchPage(2)">🇸🇦 → 🇵🇱 Guess</button>
+</div>
+
+<!-- ============ PAGE 1: Polish front, translation back ============ -->
+<div class="app" id="page1">
+  <div class="tabs" id="tabs1"></div>
+  <p class="hint">tap card to flip · ‹ › to move</p>
+  <div class="scene" id="scene1" onclick="flip1()">
+    <div class="inner" id="inner1">
+      <div class="face front">
+        <div class="face-label">Polish</div>
+        <div class="polish-text" id="fp"></div>
+        <div class="pron" id="fr"></div>
+        <div class="divider"></div>
+        <div class="keyword" id="fk"></div>
+        <div class="theme-tag" id="ft"></div>
+        <div class="flip-hint">tap to reveal</div>
+      </div>
+      <div class="face back">
+        <div class="face-label">Translation</div>
+        <div class="arabic-text" id="ba"></div>
+        <div class="divider"></div>
+        <div class="english-text" id="be"></div>
+      </div>
+    </div>
+  </div>
+  <div class="controls">
+    <button class="nav-btn" onclick="prev1()">‹ Prev</button>
+    <span class="prog" id="prog1"></span>
+    <button class="nav-btn" onclick="next1()">Next ›</button>
+  </div>
+  <button class="shuffle" onclick="shuffleDeck1()">⇄ Shuffle deck</button>
+</div>
+
+<!-- ============ PAGE 2: Arabic front, guess Polish ============ -->
+<div class="app" id="page2" style="display:none">
+  <div class="tabs" id="tabs2"></div>
+  <p class="hint">guess the Polish, then reveal</p>
+  <div class="scene" id="scene2" onclick="flip2()">
+    <div class="inner" id="inner2">
+      <div class="face front">
+        <div class="face-label">Arabic / English</div>
+        <div class="arabic-text" id="rba"></div>
+        <div class="divider"></div>
+        <div class="english-text" id="rbe"></div>
+        <div class="flip-hint">tap to reveal Polish</div>
+      </div>
+      <div class="face back">
+        <div class="face-label">Polish</div>
+        <div class="polish-text" id="rfp"></div>
+        <div class="pron" id="rfr"></div>
+        <div class="divider"></div>
+        <div class="keyword" id="rfk"></div>
+        <div class="theme-tag" id="rft"></div>
+      </div>
+    </div>
+  </div>
+  <div class="controls">
+    <button class="nav-btn" onclick="prev2()">‹ Prev</button>
+    <span class="prog" id="prog2"></span>
+    <button class="nav-btn" onclick="next2()">Next ›</button>
+  </div>
+  <button class="shuffle" onclick="shuffleDeck2()">⇄ Shuffle deck</button>
+</div>
+
+<script>
+const all=[
+  {t:"daily",p:"Dzień dobry.",r:"djen DOH-bry",a:"صباح الخير.",e:"Good morning.",k:"dzień dobry"},
+  {t:"daily",p:"Dobry wieczór.",r:"DOH-bry vye-CHOOR",a:"مساء الخير.",e:"Good evening.",k:"wieczór"},
+  {t:"daily",p:"Dobranoc.",r:"doh-BRAH-nots",a:"تصبح على خير.",e:"Good night.",k:"dobranoc"},
+  {t:"daily",p:"Jak się masz?",r:"yak sheh mash",a:"كيف حالك؟",e:"How are you?",k:"jak się masz"},
+  {t:"daily",p:"Dobrze, dziękuję.",r:"DOH-bzhe, djen-KOO-yeh",a:"بخير، شكراً.",e:"Fine, thank you.",k:"dobrze"},
+  {t:"daily",p:"Nie rozumiem.",r:"nyeh roh-ZOO-myem",a:"لا أفهم.",e:"I don't understand.",k:"nie rozumiem"},
+  {t:"daily",p:"Czy mówisz po angielsku?",r:"chi MOO-vish poh an-GYEL-skoo",a:"هل تتكلم الإنجليزية؟",e:"Do you speak English?",k:"mówisz"},
+  {t:"daily",p:"Proszę mówić wolniej.",r:"PROH-sheh MOO-vich VOL-nyey",a:"من فضلك تكلم ببطء.",e:"Please speak slower.",k:"wolniej"},
+  {t:"daily",p:"Jak to się mówi po polsku?",r:"yak toh sheh MOO-vee poh POL-skoo",a:"كيف تقول هذا بالبولندية؟",e:"How do you say this in Polish?",k:"po polsku"},
+  {t:"daily",p:"Mieszkam w Warszawie.",r:"myesh-KAM v var-SHA-vye",a:"أسكن في وارسو.",e:"I live in Warsaw.",k:"mieszkam"},
+  {t:"daily",p:"Mam klucze.",r:"mam KLOO-cheh",a:"معي المفاتيح.",e:"I have the keys.",k:"mam"},
+  {t:"daily",p:"To jest moje mieszkanie.",r:"toh yest MOH-ye myesh-KAH-nye",a:"هذه شقتي.",e:"This is my apartment.",k:"mieszkanie"},
+  {t:"daily",p:"Chcę się położyć.",r:"htseh sheh poh-WOH-zhich",a:"أريد أن أنام.",e:"I want to lie down.",k:"chcę"},
+  {t:"daily",p:"Jestem zmęczony.",r:"YES-tem zmen-CHOH-ny",a:"أنا متعب.",e:"I'm tired.",k:"zmęczony"},
+  {t:"daily",p:"Potrzebuję pomocy.",r:"poh-tsheh-BOO-yeh poh-MOH-tsy",a:"أحتاج مساعدة.",e:"I need help.",k:"potrzebuję"},
+  {t:"daily",p:"Gdzie jest łazienka?",r:"gdye yest wah-ZYEN-kah",a:"أين الحمام؟",e:"Where is the bathroom?",k:"łazienka"},
+  {t:"daily",p:"Włącz światło, proszę.",r:"vwonch SHVYAT-woh PROH-sheh",a:"أضئ النور، من فضلك.",e:"Turn on the light, please.",k:"włącz"},
+  {t:"daily",p:"Zimno mi.",r:"ZEEM-noh mee",a:"أنا بارد.",e:"I'm cold.",k:"zimno"},
+  {t:"daily",p:"Gorąco mi.",r:"goh-ROHN-tso mee",a:"أنا حار.",e:"I'm hot.",k:"gorąco"},
+  {t:"daily",p:"Idę spać.",r:"EE-deh spach",a:"سأنام الآن.",e:"I'm going to sleep.",k:"idę spać"},
+  {t:"daily",p:"Zaraz wracam.",r:"ZAH-raz VRAH-tsam",a:"سأعود قريباً.",e:"I'll be right back.",k:"zaraz"},
+  {t:"daily",p:"Przepraszam za spóźnienie.",r:"pshe-PROH-shahm zah spoozh-NYE-nye",a:"آسف على التأخير.",e:"Sorry for being late.",k:"spóźnienie"},
+  {t:"daily",p:"Nie ma problemu.",r:"nyeh mah proh-BLE-moo",a:"لا مشكلة.",e:"No problem.",k:"nie ma problemu"},
+  {t:"daily",p:"Rozumiem.",r:"roh-ZOO-myem",a:"أفهم.",e:"I understand.",k:"rozumiem"},
+  {t:"daily",p:"Czy mogę otworzyć okno?",r:"chi MOH-geh ot-VOH-zhich OK-noh",a:"هل يمكنني فتح النافذة؟",e:"Can I open the window?",k:"mogę"},
+  {t:"transit",p:"Gdzie jest metro?",r:"gdye yest ME-troh",a:"أين المترو؟",e:"Where is the metro?",k:"metro"},
+  {t:"transit",p:"Ile to kosztuje?",r:"EE-leh toh kosh-TOO-yeh",a:"كم يكلف هذا؟",e:"How much does this cost?",k:"ile kosztuje"},
+  {t:"transit",p:"Poproszę bilet.",r:"poh-PROH-sheh BEE-let",a:"تذكرة، من فضلك.",e:"A ticket, please.",k:"bilet"},
+  {t:"transit",p:"Czy to jest autobus do centrum?",r:"chi toh yest ow-TOH-boos doh TSEN-troom",a:"هل هذا الأوتوبيس للمركز؟",e:"Is this the bus to the centre?",k:"autobus"},
+  {t:"transit",p:"Przepraszam, zgubiam się.",r:"pshe-PROH-shahm ZGOO-byam sheh",a:"عفواً، أنا ضائع.",e:"Excuse me, I'm lost.",k:"zgubiam się"},
+  {t:"transit",p:"Ile minut stąd?",r:"EE-leh MEE-noot stont",a:"كم دقيقة من هنا؟",e:"How many minutes from here?",k:"stąd"},
+  {t:"transit",p:"Następny przystanek.",r:"nas-TEMP-ny pshi-STAH-nek",a:"المحطة القادمة.",e:"Next stop.",k:"następny"},
+  {t:"transit",p:"Proszę, gdzie wysiąść?",r:"PROH-sheh gdye vy-SHONSHCH",a:"من فضلك، أين أنزل؟",e:"Please, where should I get off?",k:"wysiąść"},
+  {t:"transit",p:"Jak dojechać na lotnisko?",r:"yak doh-YEH-hach nah lot-NEE-skoh",a:"كيف أصل إلى المطار؟",e:"How do I get to the airport?",k:"lotnisko"},
+  {t:"transit",p:"Czy jest tu parking?",r:"chi yest too PAR-king",a:"هل يوجد موقف سيارات هنا؟",e:"Is there parking here?",k:"parking"},
+  {t:"transit",p:"Skręć w lewo.",r:"skrehnch v LEH-voh",a:"اتجه يساراً.",e:"Turn left.",k:"lewo"},
+  {t:"transit",p:"Skręć w prawo.",r:"skrehnch v PRAH-voh",a:"اتجه يميناً.",e:"Turn right.",k:"prawo"},
+  {t:"transit",p:"Idź prosto.",r:"eetch PROH-stoh",a:"امش مستقيماً.",e:"Go straight.",k:"prosto"},
+  {t:"transit",p:"To jest daleko?",r:"toh yest dah-LEH-koh",a:"هل هذا بعيد؟",e:"Is it far?",k:"daleko"},
+  {t:"transit",p:"Zadzwoń do mnie.",r:"ZAD-zvon doh MNYEH",a:"اتصل بي.",e:"Call me.",k:"zadzwoń"},
+  {t:"transit",p:"Czekam na ciebie.",r:"CHE-kam nah CHYE-bye",a:"أنا في انتظارك.",e:"I'm waiting for you.",k:"czekam"},
+  {t:"transit",p:"Mój adres to...",r:"mooy AH-dres toh",a:"عنواني هو...",e:"My address is...",k:"adres"},
+  {t:"transit",p:"Poproszę taksówkę.",r:"poh-PROH-sheh tak-SOOF-keh",a:"أريد سيارة أجرة، من فضلك.",e:"A taxi, please.",k:"taksówka"},
+  {t:"transit",p:"Czy mogę tu zaparkować?",r:"chi MOH-geh too zah-par-KOH-vach",a:"هل يمكنني الوقوف هنا؟",e:"Can I park here?",k:"zaparkować"},
+  {t:"transit",p:"O której godzinie odjeżdża pociąg?",r:"oh KTOO-rey goh-JEE-nye od-YEZH-jah POH-chyong",a:"في أي ساعة يغادر القطار؟",e:"What time does the train leave?",k:"pociąg"},
+  {t:"food",p:"Poproszę kawę z mlekiem.",r:"poh-PROH-sheh KAH-veh z mle-KYEM",a:"قهوة بالحليب، من فضلك.",e:"A coffee with milk, please.",k:"kawa"},
+  {t:"food",p:"Co polecasz?",r:"tso poh-LEH-tsash",a:"ماذا توصي؟",e:"What do you recommend?",k:"polecasz"},
+  {t:"food",p:"Czy jest menu po angielsku?",r:"chi yest ME-noo poh an-GYEL-skoo",a:"هل يوجد قائمة بالإنجليزية؟",e:"Is there a menu in English?",k:"menu"},
+  {t:"food",p:"Poproszę rachunek.",r:"poh-PROH-sheh ra-HOO-nek",a:"الحساب، من فضلك.",e:"The bill, please.",k:"rachunek"},
+  {t:"food",p:"Jestem głodny.",r:"YES-tem GWOD-ny",a:"أنا جائع.",e:"I'm hungry.",k:"głodny"},
+  {t:"food",p:"To jest bardzo smaczne.",r:"toh yest BAR-dzoh SMACH-neh",a:"هذا لذيذ جداً.",e:"This is very tasty.",k:"smaczne"},
+  {t:"food",p:"Nie jem mięsa.",r:"nyeh yem MYEN-sah",a:"أنا لا آكل اللحم.",e:"I don't eat meat.",k:"nie jem"},
+  {t:"food",p:"Poproszę szklankę wody.",r:"poh-PROH-sheh shklan-KEH VOH-dy",a:"كوب ماء، من فضلك.",e:"A glass of water, please.",k:"woda"},
+  {t:"food",p:"Czy to jest ostre?",r:"chi toh yest OS-treh",a:"هل هذا حار؟",e:"Is this spicy?",k:"ostre"},
+  {t:"food",p:"Bez cukru, proszę.",r:"bez TSOO-kroo PROH-sheh",a:"بدون سكر، من فضلك.",e:"Without sugar, please.",k:"bez cukru"},
+  {t:"food",p:"Na wynos, proszę.",r:"nah VY-nos PROH-sheh",a:"للأخذ، من فضلك.",e:"To take away, please.",k:"na wynos"},
+  {t:"food",p:"Stolik dla dwóch osób.",r:"STOH-leek dlah dvooh OH-soob",a:"طاولة لشخصين.",e:"A table for two.",k:"stolik"},
+  {t:"food",p:"Czy mogę zamówić?",r:"chi MOH-geh zah-MOO-veech",a:"هل يمكنني الطلب؟",e:"Can I order?",k:"zamówić"},
+  {t:"food",p:"Mam alergię na orzechy.",r:"mam ah-LER-gyeh nah oh-ZHE-hy",a:"عندي حساسية من المكسرات.",e:"I'm allergic to nuts.",k:"alergia"},
+  {t:"food",p:"To jest za słone.",r:"toh yest zah SWOH-neh",a:"هذا مالح جداً.",e:"This is too salty.",k:"słone"},
+  {t:"food",p:"Poproszę herbatę.",r:"poh-PROH-sheh her-BAH-teh",a:"شاي، من فضلك.",e:"A tea, please.",k:"herbata"},
+  {t:"food",p:"Czy jest coś wegetariańskiego?",r:"chi yest tsosh ve-ge-tah-RYAHN-skye-go",a:"هل يوجد شيء نباتي؟",e:"Is there something vegetarian?",k:"wegetariańskie"},
+  {t:"food",p:"Jestem najedzony.",r:"YES-tem nah-ye-DOH-ny",a:"أنا شبعان.",e:"I'm full.",k:"najedzony"},
+  {t:"food",p:"Zapłacimy osobno.",r:"zah-PWAH-tsee-my oh-SOB-noh",a:"سندفع كل واحد منا على حدة.",e:"We'll pay separately.",k:"osobno"},
+  {t:"food",p:"Czy mogę dostać paragon?",r:"chi MOH-geh DOS-tach pah-RAH-gon",a:"هل يمكنني الحصول على إيصال؟",e:"Can I get a receipt?",k:"paragon"},
+  {t:"food",p:"Poproszę jeszcze raz.",r:"poh-PROH-sheh YESH-cheh ras",a:"مرة أخرى، من فضلك.",e:"Once more, please / same again.",k:"jeszcze raz"},
+  {t:"shop",p:"Gdzie jest sklep spożywczy?",r:"gdye yest sklep spoh-ZHYV-chy",a:"أين متجر البقالة؟",e:"Where is the grocery store?",k:"sklep"},
+  {t:"shop",p:"Ile to kosztuje?",r:"EE-leh toh kosh-TOO-yeh",a:"كم سعر هذا؟",e:"How much does this cost?",k:"kosztuje"},
+  {t:"shop",p:"Czy mogę zapłacić kartą?",r:"chi MOH-geh zah-PWAH-cheech KAR-toh",a:"هل يمكنني الدفع بالبطاقة؟",e:"Can I pay by card?",k:"kartą"},
+  {t:"shop",p:"Poproszę torbę.",r:"poh-PROH-sheh TOR-beh",a:"كيس، من فضلك.",e:"A bag, please.",k:"torba"},
+  {t:"shop",p:"Czy macie rozmiar M?",r:"chi MAH-chye ROZ-myar em",a:"هل عندكم مقاس M؟",e:"Do you have size M?",k:"rozmiar"},
+  {t:"shop",p:"To jest za drogie.",r:"toh yest zah DROH-gye",a:"هذا غالي جداً.",e:"This is too expensive.",k:"drogie"},
+  {t:"shop",p:"Szukam apteki.",r:"SHOO-kam ap-TEH-kee",a:"أبحث عن صيدلية.",e:"I'm looking for a pharmacy.",k:"apteka"},
+  {t:"shop",p:"Czy jest tu bankomat?",r:"chi yest too ban-KOH-mat",a:"هل يوجد صراف آلي هنا؟",e:"Is there an ATM here?",k:"bankomat"},
+  {t:"shop",p:"Chcę to zwrócić.",r:"htseh toh ZVROO-cheech",a:"أريد إرجاع هذا.",e:"I want to return this.",k:"zwrócić"},
+  {t:"shop",p:"Czy jest rabat?",r:"chi yest RAH-bat",a:"هل يوجد خصم؟",e:"Is there a discount?",k:"rabat"},
+  {t:"shop",p:"Poproszę paragon.",r:"poh-PROH-sheh pah-RAH-gon",a:"الإيصال، من فضلك.",e:"The receipt, please.",k:"paragon"},
+  {t:"shop",p:"Otwieram o ósmej.",r:"ot-VYE-ram oh OOS-mey",a:"يفتح الساعة الثامنة.",e:"It opens at eight.",k:"otwieram"},
+  {t:"shop",p:"Sklep jest zamknięty.",r:"sklep yest zam-KNYEH-ty",a:"المتجر مغلق.",e:"The shop is closed.",k:"zamknięty"},
+  {t:"shop",p:"Czy to jest w promocji?",r:"chi toh yest v proh-MOH-tsyee",a:"هل هذا في العرض؟",e:"Is this on sale?",k:"promocja"},
+  {t:"shop",p:"Potrzebuję lekarstwa.",r:"poh-tsheh-BOO-yeh le-KAR-stvah",a:"أحتاج دواء.",e:"I need medicine.",k:"lekarstwo"},
+  {t:"social",p:"Skąd jesteś?",r:"skont YES-tesh",a:"من أين أنت؟",e:"Where are you from?",k:"skąd"},
+  {t:"social",p:"Jestem z Egiptu.",r:"YES-tem z e-GZIP-too",a:"أنا من مصر.",e:"I'm from Egypt.",k:"z Egiptu"},
+  {t:"social",p:"Miło mi cię poznać.",r:"MEE-woh mee cheh POZ-nach",a:"سعيد بلقائك.",e:"Nice to meet you.",k:"miło poznać"},
+  {t:"social",p:"Jak masz na imię?",r:"yak mash nah EE-myeh",a:"ما اسمك؟",e:"What is your name?",k:"imię"},
+  {t:"social",p:"Mam na imię Mohamed.",r:"mam nah EE-myeh moh-HA-med",a:"اسمي محمد.",e:"My name is Mohamed.",k:"mam na imię"},
+  {t:"social",p:"Uczę się polskiego.",r:"OO-cheh sheh pol-SKYE-go",a:"أنا أتعلم البولندية.",e:"I'm learning Polish.",k:"uczę się"},
+  {t:"social",p:"Mój polski nie jest dobry.",r:"mooy POL-skee nyeh yest DOH-bry",a:"بولنديتي ليست جيدة.",e:"My Polish is not good.",k:"mój polski"},
+  {t:"social",p:"Czy możemy mówić po angielsku?",r:"chi moh-ZHE-my MOO-vich poh an-GYEL-skoo",a:"هل يمكننا التحدث بالإنجليزية؟",e:"Can we speak in English?",k:"możemy"},
+  {t:"social",p:"Do zobaczenia.",r:"doh zoh-bah-CHE-nya",a:"إلى اللقاء.",e:"See you later.",k:"do zobaczenia"},
+  {t:"social",p:"Na zdrowie!",r:"nah ZDROH-vye",a:"في صحتك!",e:"Cheers! / Bless you!",k:"na zdrowie"},
+  {t:"social",p:"Wszystkiego najlepszego.",r:"vshistkye-go nay-LEP-she-go",a:"كل التوفيق / عيد ميلاد سعيد.",e:"All the best / Happy birthday.",k:"najlepszego"},
+  {t:"social",p:"To nie mój problem.",r:"toh nyeh mooy PROH-blem",a:"هذه ليست مشكلتي.",e:"That's not my problem.",k:"problem"},
+  {t:"social",p:"Nie wiem.",r:"nyeh vyem",a:"لا أعرف.",e:"I don't know.",k:"nie wiem"},
+  {t:"social",p:"Oczywiście.",r:"oh-chi-VEESH-chye",a:"بالطبع.",e:"Of course.",k:"oczywiście"},
+  {t:"social",p:"Może.",r:"MOH-zheh",a:"ربما.",e:"Maybe.",k:"może"},
+];
+
+const themes=[
+  {id:"all",label:"All",icon:""},
+  {id:"daily",label:"Daily life",icon:"🏠"},
+  {id:"transit",label:"Getting around",icon:"🚌"},
+  {id:"food",label:"Food & cafes",icon:"☕"},
+  {id:"shop",label:"Shopping",icon:"🛍"},
+  {id:"social",label:"Small talk",icon:"💬"},
+];
+const themeColors={daily:"#4a7c59",transit:"#4a6a7c",food:"#7c6a4a",shop:"#7c4a6a",social:"#4a4a7c"};
+const themeLabels={daily:"🏠 Daily life",transit:"🚌 Getting around",food:"☕ Food & cafes",shop:"🛍 Shopping",social:"💬 Small talk"};
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+/* ================= PAGE 1 (Polish -> translation) ================= */
+let cur1=0, flipped1=false, deck1=[...all];
+
+function buildTabs1(){
+  const wrap=document.getElementById("tabs1");
+  wrap.innerHTML="";
+  themes.forEach(th=>{
+    const b=document.createElement("button");
+    b.className="tab"+(th.id==="all"?" active":"");
+    const count=th.id==="all"?all.length:all.filter(c=>c.t===th.id).length;
+    b.innerHTML=`${th.icon?th.icon+" ":""}${th.label} <span style="opacity:0.45;font-size:10px">${count}</span>`;
+    b.onclick=()=>selectTheme1(th.id,b);
+    wrap.appendChild(b);
+  });
+}
+function selectTheme1(id,btn){
+  document.querySelectorAll("#tabs1 .tab").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  deck1=id==="all"?[...all]:all.filter(c=>c.t===id);
+  cur1=0;flipped1=false;
+  document.getElementById("inner1").classList.remove("flipped");
+  render1();
+}
+function render1(){
+  const c=deck1[cur1];
+  document.getElementById("fp").textContent=c.p;
+  document.getElementById("fr").textContent=c.r;
+  const kw=document.getElementById("fk");
+  kw.textContent=c.k;
+  kw.style.background=(themeColors[c.t]||"#5d9e5d")+"22";
+  kw.style.color=themeColors[c.t]||"#5d9e5d";
+  document.getElementById("ft").textContent=themeLabels[c.t]||"";
+  document.getElementById("ba").textContent=c.a;
+  document.getElementById("be").textContent=c.e;
+  document.getElementById("prog1").textContent=(cur1+1)+" / "+deck1.length;
+}
+function flip1(){flipped1=!flipped1;document.getElementById("inner1").classList.toggle("flipped",flipped1);}
+function next1(){cur1=(cur1+1)%deck1.length;flipped1=false;document.getElementById("inner1").classList.remove("flipped");render1();}
+function prev1(){cur1=(cur1-1+deck1.length)%deck1.length;flipped1=false;document.getElementById("inner1").classList.remove("flipped");render1();}
+function shuffleDeck1(){shuffle(deck1);cur1=0;flipped1=false;document.getElementById("inner1").classList.remove("flipped");render1();}
+
+/* ================= PAGE 2 (Arabic -> guess Polish) ================= */
+let cur2=0, flipped2=false, deck2=[...all];
+
+function buildTabs2(){
+  const wrap=document.getElementById("tabs2");
+  wrap.innerHTML="";
+  themes.forEach(th=>{
+    const b=document.createElement("button");
+    b.className="tab"+(th.id==="all"?" active":"");
+    const count=th.id==="all"?all.length:all.filter(c=>c.t===th.id).length;
+    b.innerHTML=`${th.icon?th.icon+" ":""}${th.label} <span style="opacity:0.45;font-size:10px">${count}</span>`;
+    b.onclick=()=>selectTheme2(th.id,b);
+    wrap.appendChild(b);
+  });
+}
+function selectTheme2(id,btn){
+  document.querySelectorAll("#tabs2 .tab").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  deck2=id==="all"?[...all]:all.filter(c=>c.t===id);
+  cur2=0;flipped2=false;
+  document.getElementById("inner2").classList.remove("flipped");
+  render2();
+}
+function render2(){
+  const c=deck2[cur2];
+  document.getElementById("rba").textContent=c.a;
+  document.getElementById("rbe").textContent=c.e;
+  document.getElementById("rfp").textContent=c.p;
+  document.getElementById("rfr").textContent=c.r;
+  const kw=document.getElementById("rfk");
+  kw.textContent=c.k;
+  kw.style.background=(themeColors[c.t]||"#5d9e5d")+"22";
+  kw.style.color=themeColors[c.t]||"#5d9e5d";
+  document.getElementById("rft").textContent=themeLabels[c.t]||"";
+  document.getElementById("prog2").textContent=(cur2+1)+" / "+deck2.length;
+}
+function flip2(){flipped2=!flipped2;document.getElementById("inner2").classList.toggle("flipped",flipped2);}
+function next2(){cur2=(cur2+1)%deck2.length;flipped2=false;document.getElementById("inner2").classList.remove("flipped");render2();}
+function prev2(){cur2=(cur2-1+deck2.length)%deck2.length;flipped2=false;document.getElementById("inner2").classList.remove("flipped");render2();}
+function shuffleDeck2(){shuffle(deck2);cur2=0;flipped2=false;document.getElementById("inner2").classList.remove("flipped");render2();}
+
+/* ================= Page switching ================= */
+function switchPage(n){
+  document.getElementById("page1").style.display = n===1 ? "block":"none";
+  document.getElementById("page2").style.display = n===2 ? "block":"none";
+  document.getElementById("btnPage1").classList.toggle("active", n===1);
+  document.getElementById("btnPage2").classList.toggle("active", n===2);
+}
+
+/* ================= Swipe support ================= */
+function addSwipe(el, onLeft, onRight, onTap){
+  let sx=0, sy=0, moved=false;
+  el.addEventListener("touchstart",e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;moved=false;},{passive:true});
+  el.addEventListener("touchmove",()=>{moved=true;},{passive:true});
+  el.addEventListener("touchend",e=>{
+    const dx=e.changedTouches[0].clientX-sx;
+    const dy=e.changedTouches[0].clientY-sy;
+    if(Math.abs(dx)>40 && Math.abs(dx)>Math.abs(dy)){
+      if(dx<0) onLeft(); else onRight();
+    } else if(!moved){
+      onTap();
+    }
+  });
+}
+
+/* ================= Keyboard ================= */
+document.addEventListener("keydown",e=>{
+  const onPage1 = document.getElementById("page1").style.display !== "none";
+  if(e.key==="ArrowRight") onPage1?next1():next2();
+  if(e.key==="ArrowLeft") onPage1?prev1():prev2();
+  if(e.key===" "||e.key==="Enter"){e.preventDefault(); onPage1?flip1():flip2();}
+});
+
+/* ================= Init ================= */
+buildTabs1();render1();
+buildTabs2();render2();
+
+addSwipe(document.getElementById("scene1"), next1, prev1, flip1);
+addSwipe(document.getElementById("scene2"), next2, prev2, flip2);
+</script>
+</body>
+</html>
