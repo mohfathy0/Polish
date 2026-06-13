@@ -33,7 +33,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;c
 .scene{perspective:1000px;width:100%;margin:0 auto 1.2rem;height:min(54vh,300px);cursor:pointer;touch-action:pan-y}
 .inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform 0.45s cubic-bezier(.4,0,.2,1)}
 .inner.flipped{transform:rotateY(180deg)}
-.face{position:absolute;width:100%;height:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:18px;border:0.5px solid #2a2a2a;background:#161616;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.2rem 1.2rem 1rem;text-align:center;gap:0}
+.face{position:absolute;width:100%;height:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:18px;border:0.5px solid #2a2a2a;background:#161616;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.2rem;text-align:center;overflow:auto}
 .back{transform:rotateY(180deg);background:#181818}
 
 .face-label{font-size:10px;text-transform:uppercase;letter-spacing:0.12em;color:#444;margin-bottom:8px}
@@ -192,10 +192,13 @@ const all=[
   {t:"daily",p:"Nie ma problemu.",r:"nyeh mah proh-BLE-moo",a:"لا مشكلة.",at:"la mushkila",e:"No problem.",k:"nie ma problemu"},
   {t:"daily",p:"Rozumiem.",r:"roh-ZOO-myem",a:"أفهم.",at:"afham",e:"I understand.",k:"rozumiem"},
   {t:"daily",p:"Czy mogę otworzyć okno?",r:"chi MOH-geh ot-VOH-zhich OK-noh",a:"هل يمكنني فتح النافذة؟",at:"hal yumkinuni fath al-nafidha?",e:"Can I open the window?",k:"mogę"},
+  {t:"daily",p:"Przepraszam, nie słyszę.",r:"pshe-PROH-shahm nyeh SWIH-sheh",a:"آسف، لا أسمع.",at:"asif, la asma'",e:"Sorry, I can't hear.",k:"słyszę"},
+  {t:"daily",p:"Możesz powtórzyć?",r:"MOH-zhesh pov-TOO-zhich",a:"هل يمكنك التكرار؟",at:"hal yumkinuka al-tikrar?",e:"Can you repeat?",k:"powtórzyć"},
+  {t:"daily",p:"Proszę napisać to.",r:"PROH-sheh nah-PEE-sach toh",a:"من فضلك اكتب هذا.",at:"min fadlak uktub hadha",e:"Please write that down.",k:"napisać"},
   {t:"transit",p:"Gdzie jest metro?",r:"gdye yest ME-troh",a:"أين المترو؟",at:"ayna al-metro?",e:"Where is the metro?",k:"metro"},
   {t:"transit",p:"Ile to kosztuje?",r:"EE-leh toh kosh-TOO-yeh",a:"كم يكلف هذا؟",at:"kam yukallifu hadha?",e:"How much does this cost?",k:"ile kosztuje"},
   {t:"transit",p:"Poproszę bilet.",r:"poh-PROH-sheh BEE-let",a:"تذكرة، من فضلك.",at:"tadhkara, min fadlak",e:"A ticket, please.",k:"bilet"},
-  {t:"transit",p:"Czy to jest autobus do centrum?",r:"chi toh yest ow-TOH-boos doh TSEN-troom",a:"هل هذا الأوتوبيس للمركز؟",at:"hal hadha al-otoobees lil-markaz?",e:"Is this the bus to the centre?",k:"autobus"},
+  {t:"transit",p:"Czy to jest autobus do centrum?",r:"chi toh yest ow-TOH-boos doh TSEN-troom",a:"هل هذا الأوتوبيس للمركز؟",at:"hal hadha al-otoobees lil-markaz?",e:"Is this the bus to the center?",k:"autobus"},
   {t:"transit",p:"Przepraszam, zgubiam się.",r:"pshe-PROH-shahm ZGOO-byam sheh",a:"عفواً، أنا ضائع.",at:"'afwan, ana da'i'",e:"Excuse me, I'm lost.",k:"zgubiam się"},
   {t:"transit",p:"Ile minut stąd?",r:"EE-leh MEE-noot stont",a:"كم دقيقة من هنا؟",at:"kam daqeeqa min huna?",e:"How many minutes from here?",k:"stąd"},
   {t:"transit",p:"Następny przystanek.",r:"nas-TEMP-ny pshi-STAH-nek",a:"المحطة القادمة.",at:"al-mahatta al-qadima",e:"Next stop.",k:"następny"},
@@ -235,7 +238,7 @@ const all=[
   {t:"food",p:"Poproszę jeszcze raz.",r:"poh-PROH-sheh YESH-cheh ras",a:"مرة أخرى، من فضلك.",at:"marra ukhra, min fadlak",e:"Once more, please / same again.",k:"jeszcze raz"},
   {t:"shop",p:"Gdzie jest sklep spożywczy?",r:"gdye yest sklep spoh-ZHYV-chy",a:"أين متجر البقالة؟",at:"ayna matjar al-buqala?",e:"Where is the grocery store?",k:"sklep"},
   {t:"shop",p:"Ile to kosztuje?",r:"EE-leh toh kosh-TOO-yeh",a:"كم سعر هذا؟",at:"kam si'r hadha?",e:"How much does this cost?",k:"kosztuje"},
-  {t:"shop",p:"Czy mogę zapłacić kartą?",r:"chi MOH-geh zah-PWAH-cheech KAR-toh",a:"هل يمكنني الدفع بالبطاقة؟",at:"hal yumkinuni al-daf' bil-bitaqa?",e:"Can I pay by card?",k:"kartą"},
+  {t:"shop",p:"Czy mogę zapłacić kartą?",r:"chi MOH-geh zah-PWAH-cheech KAR-toh",a:"هل يمكنني الدفع بالبطاقة؟",at:"hal yumkinuni al-daf' bil-bitaqa?",e:"Can I pay by card?",k:"zapłacić"},
   {t:"shop",p:"Poproszę torbę.",r:"poh-PROH-sheh TOR-beh",a:"كيس، من فضلك.",at:"kees, min fadlak",e:"A bag, please.",k:"torba"},
   {t:"shop",p:"Czy macie rozmiar M?",r:"chi MAH-chye ROZ-myar em",a:"هل عندكم مقاس M؟",at:"hal 'indakum maqas M?",e:"Do you have size M?",k:"rozmiar"},
   {t:"shop",p:"To jest za drogie.",r:"toh yest zah DROH-gye",a:"هذا غالي جداً.",at:"hadha ghali jiddan",e:"This is too expensive.",k:"drogie"},
@@ -255,14 +258,61 @@ const all=[
   {t:"social",p:"Mam na imię Mohamed.",r:"mam nah EE-myeh moh-HA-med",a:"اسمي محمد.",at:"ismi Muhammad",e:"My name is Mohamed.",k:"mam na imię"},
   {t:"social",p:"Uczę się polskiego.",r:"OO-cheh sheh pol-SKYE-go",a:"أنا أتعلم البولندية.",at:"ana ata'allam al-bulundiyya",e:"I'm learning Polish.",k:"uczę się"},
   {t:"social",p:"Mój polski nie jest dobry.",r:"mooy POL-skee nyeh yest DOH-bry",a:"بولنديتي ليست جيدة.",at:"bulundiyati laysat jayyida",e:"My Polish is not good.",k:"mój polski"},
-  {t:"social",p:"Czy możemy mówić po angielsku?",r:"chi moh-ZHE-my MOO-vich poh an-GYEL-skoo",a:"هل يمكننا التحدث بالإنجليزية؟",at:"hal yumkinuna al-tahadduth bil-ingleeziyya?",e:"Can we speak in English?",k:"możemy"},
+  {t:"social",p:"Czy możemy mówić po angielsku?",r:"chi moh-ZHE-my MOO-vich poh an-GYEL-skoo",a:"هل يمكننا التحدث بالإنجليزية؟",at:"hal yumkinuna al-tahadduth bil-ingleeziyya?",e:"Can we speak English?",k:"angielsku"},
   {t:"social",p:"Do zobaczenia.",r:"doh zoh-bah-CHE-nya",a:"إلى اللقاء.",at:"ila al-liqa'",e:"See you later.",k:"do zobaczenia"},
   {t:"social",p:"Na zdrowie!",r:"nah ZDROH-vye",a:"في صحتك!",at:"fi sihhtak!",e:"Cheers! / Bless you!",k:"na zdrowie"},
-  {t:"social",p:"Wszystkiego najlepszego.",r:"vshistkye-go nay-LEP-she-go",a:"كل التوفيق / عيد ميلاد سعيد.",at:"kull al-tawfeeq / 'eed milad sa'eed",e:"All the best / Happy birthday.",k:"najlepszego"},
+  {t:"social",p:"Wszystkiego najlepszego.",r:"vshistkye-go nay-LEP-she-go",a:"كل التوفيق / عيد ميلاد سعيد.",at:"kull al-tawfeeq / 'eed milad sa'eed",e:"All the best / Happy birthday!",k:"najlepszego"},
   {t:"social",p:"To nie mój problem.",r:"toh nyeh mooy PROH-blem",a:"هذه ليست مشكلتي.",at:"hadhihi laysat mushkilati",e:"That's not my problem.",k:"problem"},
   {t:"social",p:"Nie wiem.",r:"nyeh vyem",a:"لا أعرف.",at:"la a'rif",e:"I don't know.",k:"nie wiem"},
   {t:"social",p:"Oczywiście.",r:"oh-chi-VEESH-chye",a:"بالطبع.",at:"bil-tab'",e:"Of course.",k:"oczywiście"},
   {t:"social",p:"Może.",r:"MOH-zheh",a:"ربما.",at:"rubbama",e:"Maybe.",k:"może"},
+  {t:"social",p:"Ile masz lat?",r:"EE-leh mash lat",a:"كم عمرك؟",at:"kam 'umruk?",e:"How old are you?",k:"ile lat"},
+  {t:"social",p:"Mam trzydzieści dwa lata.",r:"mam tshih-DJESH-chee dvah LAH-tah",a:"عمري اثنان وثلاثون سنة.",at:"'umri ithnan wa-thalathun sana",e:"I am thirty-two years old.",k:"lata"},
+  {t:"social",p:"Czy masz rodzeństwo?",r:"chi mash roh-DJEN-stvoh",a:"هل لديك إخوة؟",at:"hal ladayk ikhwa?",e:"Do you have siblings?",k:"rodzeństwo"},
+  {t:"social",p:"Mam jedną siostrę.",r:"mam YED-noh SYOS-tsheh",a:"لدي أخت واحدة.",at:"ladayya ukht wahida",e:"I have one sister.",k:"siostra"},
+  {t:"social",p:"Praca mi się podoba.",r:"PRAH-tsah mee sheh poh-DOH-bah",a:"أنا أحب عملي.",at:"ana uhibb 'amali",e:"I like my work.",k:"podoba"},
+  {t:"time",p:"Który mamy rok?",r:"KTOO-ry MAH-my rok",a:"في أي سنة نحن؟",at:"fi ayyi sana nahnu?",e:"What year is it?",k:"rok"},
+  {t:"time",p:"Który mamy dzień?",r:"KTOO-ry MAH-my djen",a:"أي يوم نحن فيه؟",at:"ayyu yawm nahnu fih?",e:"What day is it?",k:"dzień"},
+  {t:"time",p:"Która godzina?",r:"KTOO-rah goh-JEE-nah",a:"كم الساعة؟",at:"kam al-sa'a?",e:"What time is it?",k:"godzina"},
+  {t:"time",p:"Jest godzina trzecia.",r:"yest goh-JEE-nah TSHE-chyah",a:"الساعة الثالثة.",at:"al-sa'a al-thalitha",e:"It is three o'clock.",k:"trzecia"},
+  {t:"time",p:"Dzisiaj jest poniedziałek.",r:"djee-SHAY yest poh-nye-JA-wek",a:"اليوم هو الإثنين.",at:"al-yawm huwa al-ithnayn",e:"Today is Monday.",k:"poniedziałek"},
+  {t:"time",p:"Jutro jest wtorek.",r:"YOO-troh yest VTOH-rek",a:"غداً هو الثلاثاء.",at:"ghadan huwa al-thulatha'",e:"Tomorrow is Tuesday.",k:"jutro"},
+  {t:"time",p:"Wczoraj był piątek.",r:"VCHO-ray byw PYON-tek",a:"أمس كان يوم الجمعة.",at:"ams kana yawm al-jumu'a",e:"Yesterday was Friday.",k:"wczoraj"},
+  {t:"time",p:"W tym miesiącu.",r:"v tym mye-SHON-tsoo",a:"في هذا الشهر.",at:"fi hadha al-shahr",e:"This month.",k:"miesiąc"},
+  {t:"time",p:"Za tydzień.",r:"zah TY-djen",a:"بعد أسبوع.",at:"ba'd usbu'",e:"In a week.",k:"tydzień"},
+  {t:"time",p:"Rano, po południu, wieczorem.",r:"RAH-noh, poh poh-WOO-dnyoo, vye-CHOH-rem",a:"صباحاً، بعد الظهر، مساءً.",at:"sabahan, ba'd al-zuhr, masa'an",e:"Morning, afternoon, evening.",k:"rano"},
+  {t:"work",p:"Gdzie pracujesz?",r:"gdye prah-TSOO-yesh",a:"أين تعمل؟",at:"ayna ta'mal?",e:"Where do you work?",k:"pracujesz"},
+  {t:"work",p:"Pracuję w biurze.",r:"prah-TSOO-yeh v BYOO-zheh",a:"أعمل في مكتب.",at:"a'mal fi maktab",e:"I work in an office.",k:"biuro"},
+  {t:"work",p:"Jestem inżynierem.",r:"YES-tem in-zhih-NYE-rem",a:"أنا مهندس.",at:"ana muhandis",e:"I am an engineer.",k:"inżynier"},
+  {t:"work",p:"O której zaczyna się praca?",r:"oh KTOO-rey zah-CHIH-nah sheh PRAH-tsah",a:"في أي ساعة تبدأ العمل؟",at:"fi ayyi sa'a tabda' al-'amal?",e:"What time does work start?",k:"zaczyna"},
+  {t:"work",p:"Mam spotkanie.",r:"mam spot-KAH-nye",a:"لدي اجتماع.",at:"ladayya ijtima'",e:"I have a meeting.",k:"spotkanie"},
+  {t:"work",p:"Wyślę maila.",r:"VY-shleh MY-lah",a:"سأرسل بريداً إلكترونياً.",at:"sa'ursil baridan iliktruniyyan",e:"I will send an email.",k:"mail"},
+  {t:"work",p:"Proszę zadzwonić później.",r:"PROH-sheh zad-ZVOH-neech POOZH-nyey",a:"من فضلك اتصل لاحقاً.",at:"min fadlak ittasil lahiqan",e:"Please call later.",k:"zadzwonić"},
+  {t:"health",p:"Źle się czuję.",r:"zhle sheh CHOO-yeh",a:"أنا لا أشعر بخير.",at:"ana la ash'ur bikhair",e:"I don't feel well.",k:"źle"},
+  {t:"health",p:"Boli mnie głowa.",r:"BOH-lee mnyeh GWOH-vah",a:"رأسي يؤلمني.",at:"ra'si yu'limuni",e:"My head hurts.",k:"głowa"},
+  {t:"health",p:"Boli mnie gardło.",r:"BOH-lee mnyeh GAR-dwoh",a:"حلقي يؤلمني.",at:"halqi yu'limuni",e:"My throat hurts.",k:"gardło"},
+  {t:"health",p:"Mam gorączkę.",r:"mam goh-RONCH-keh",a:"عندي حمى.",at:"'indi humma",e:"I have a fever.",k:"gorączka"},
+  {t:"health",p:"Potrzebuję lekarza.",r:"poh-tsheh-BOO-yeh le-KAH-zhah",a:"أحتاج طبيباً.",at:"ahtaj tabiban",e:"I need a doctor.",k:"lekarz"},
+  {t:"health",p:"Gdzie jest szpital?",r:"gdye yest SHPEE-tal",a:"أين المستشفى؟",at:"ayna al-mustashfa?",e:"Where is the hospital?",k:"szpital"},
+  {t:"health",p:"Jestem uczulony na penicylinę.",r:"YES-tem oo-choo-LOH-ny nah pe-nee-tsih-LIH-neh",a:"أنا حساس للبنسلين.",at:"ana hassas lil-binsilin",e:"I'm allergic to penicillin.",k:"uczulony"},
+  {t:"health",p:"Proszę zadzwonić po karetkę.",r:"PROH-sheh zad-ZVOH-neech poh kah-RET-keh",a:"اتصل بالإسعاف، من فضلك.",at:"ittasil bil-is'af, min fadlak",e:"Please call an ambulance.",k:"karetka"},
+  {t:"health",p:"Mam kaszel.",r:"mam KAH-shel",a:"عندي سعال.",at:"'indi su'al",e:"I have a cough.",k:"kaszel"},
+  {t:"home",p:"Szukam mieszkania do wynajęcia.",r:"SHOO-kam myesh-KAH-nya doh vy-nah-YEN-chyah",a:"أبحث عن شقة للإيجار.",at:"abhath 'an shaqqa lil-eejar",e:"I'm looking for an apartment to rent.",k:"wynajęcie"},
+  {t:"home",p:"Ile wynosi czynsz?",r:"EE-leh vy-NOH-see CHYNSH",a:"كم الإيجار؟",at:"kam al-eejar?",e:"How much is the rent?",k:"czynsz"},
+  {t:"home",p:"Czy media są wliczone?",r:"chi ME-dyah sohn vlee-CHOH-neh",a:"هل المرافق مشمولة؟",at:"hal al-marafiq mashmula?",e:"Are utilities included?",k:"media"},
+  {t:"home",p:"Gdzie jest klucz zapasowy?",r:"gdye yest klooch zah-pah-SOH-vy",a:"أين المفتاح الاحتياطي؟",at:"ayna al-miftah al-ihtiyati?",e:"Where is the spare key?",k:"klucz zapasowy"},
+  {t:"home",p:"Śmietnik jest na dole.",r:"SHMYET-neek yest nah DOH-leh",a:"الحاوية في الطابق الأرضي.",at:"al-hawiya fil-tabiq al-ardi",e:"The bin is downstairs.",k:"śmietnik"},
+  {t:"home",p:"Ogrzewanie nie działa.",r:"oh-gzheh-VAH-nye nyeh DJA-wah",a:"التدفئة لا تعمل.",at:"al-tadfi'a la ta'mal",e:"The heating doesn't work.",k:"ogrzewanie"},
+  {t:"numbers",p:"Mam trzydzieści lat.",r:"mam tshih-DJESH-chee lat",a:"عمري ثلاثون سنة.",at:"'umri thalathun sana",e:"I am thirty years old.",k:"trzydzieści"},
+  {t:"numbers",p:"Poproszę dwa.",r:"poh-PROH-sheh dvah",a:"اثنين، من فضلك.",at:"ithnayn, min fadlak",e:"Two, please.",k:"dwa"},
+  {t:"numbers",p:"Na pierwszym piętrze.",r:"nah PYERV-shym PYEN-tsheh",a:"في الطابق الأول.",at:"fil-tabiq al-awwal",e:"On the first floor.",k:"piętro"},
+  {t:"numbers",p:"Mój numer telefonu to...",r:"mooy NOO-mer te-le-FOH-noo toh",a:"رقم هاتفي هو...",at:"raqm hatifi huwa...",e:"My phone number is...",k:"numer telefonu"},
+  {t:"numbers",p:"To kosztuje sto złotych.",r:"toh kosh-TOO-yeh stoh ZWOH-tih",a:"هذا يكلف مئة زلوتي.",at:"hadha yukallifu mi'at zloti",e:"This costs one hundred złoty.",k:"sto złotych"},
+  {t:"weather",p:"Jaka jest pogoda?",r:"YAH-kah yest poh-GOH-dah",a:"كيف الطقس؟",at:"kayfa al-taqs?",e:"What is the weather like?",k:"pogoda"},
+  {t:"weather",p:"Pada deszcz.",r:"PAH-dah deshch",a:"المطر ينزل.",at:"al-matar yanzil",e:"It's raining.",k:"deszcz"},
+  {t:"weather",p:"Jest słonecznie.",r:"yest swoh-NECH-nye",a:"الجو مشمس.",at:"al-jaww mushmis",e:"It's sunny.",k:"słonecznie"},
+  {t:"weather",p:"Jest bardzo zimno.",r:"yest BAR-dzoh ZEEM-noh",a:"الجو بارد جداً.",at:"al-jaww barid jiddan",e:"It's very cold.",k:"zimno"},
+  {t:"weather",p:"Weź parasol.",r:"vezh pah-RAH-sol",a:"خذ المظلة.",at:"khudh al-mizalla",e:"Take an umbrella.",k:"parasol"},
 ];
 
 const themes=[
@@ -272,9 +322,15 @@ const themes=[
   {id:"food",label:"Food & cafes",icon:"☕"},
   {id:"shop",label:"Shopping",icon:"🛍"},
   {id:"social",label:"Small talk",icon:"💬"},
+  {id:"time",label:"Time",icon:"⏰"},
+  {id:"work",label:"Work",icon:"💼"},
+  {id:"health",label:"Health",icon:"🏥"},
+  {id:"home",label:"Home",icon:"🏡"},
+  {id:"numbers",label:"Numbers",icon:"🔢"},
+  {id:"weather",label:"Weather",icon:"🌤"},
 ];
-const themeColors={daily:"#4a7c59",transit:"#4a6a7c",food:"#7c6a4a",shop:"#7c4a6a",social:"#4a4a7c"};
-const themeLabels={daily:"🏠 Daily life",transit:"🚌 Getting around",food:"☕ Food & cafes",shop:"🛍 Shopping",social:"💬 Small talk"};
+const themeColors={daily:"#4a7c59",transit:"#4a6a7c",food:"#7c6a4a",shop:"#7c4a6a",social:"#4a4a7c",time:"#7c7c4a",work:"#6a4a7c",health:"#7c4a4a",home:"#4a6a7c",numbers:"#7c5a4a",weather:"#4a7c6a"};
+const themeLabels={daily:"🏠 Daily life",transit:"🚌 Getting around",food:"☕ Food & cafes",shop:"🛍 Shopping",social:"💬 Small talk",time:"⏰ Time",work:"💼 Work",health:"🏥 Health",home:"🏡 Home",numbers:"🔢 Numbers",weather:"🌤 Weather"};
 
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 
@@ -317,7 +373,7 @@ function speakPolish(page){
   utt.rate=0.85;
   utt.pitch=1;
   btn.classList.add("speaking");
-  btn.innerHTML=`<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM16.5 3v2.23c2.89 1.1 5 3.9 5 7.27s-2.11 6.17-5 7.27V22c4.01-1.2 7-4.9 7-9s-2.99-7.8-7-9z"/></svg> Speaking…`;
+  btn.innerHTML=`<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM16.5 3v2.23c2.89 1.1 5 3.9 5 7.27s-2.11 6.17-5 7.27V22c4.01-1.26 7-5.1 7-9.5s-2.99-8.24-7-9.5z"/></svg> Listening`;
   utt.onend=()=>{
     btn.classList.remove("speaking");
     btn.innerHTML=`<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg> Listen`;
