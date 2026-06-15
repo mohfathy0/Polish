@@ -34,6 +34,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;c
   cursor:pointer;transition:all 0.15s;
 }
 .page-btn.active{background:#1e1e1e;color:#fff;border-color:#555}
+.page-btn.add-link{text-decoration:none;display:flex;align-items:center;justify-content:center;color:#6aac7a;border-color:#2a5a3a;background:#1a2a1a}
 
 .app{padding:1rem 0.85rem 2.5rem;max-width:560px;margin:0 auto}
 

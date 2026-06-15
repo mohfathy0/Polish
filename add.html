@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Add Vocabulary — Polish A1</title>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:#0d0d0d;color:#eee;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+
+/* Top bar */
+.topbar{
+  position:sticky;top:0;z-index:50;
+  display:flex;align-items:center;gap:10px;padding:10px 14px;
+  background:#0d0d0d;border-bottom:0.5px solid #2a2a2a;
+}
+.topbar a{
+  font-size:12px;color:#555;text-decoration:none;padding:6px 12px;
+  border-radius:10px;border:0.5px solid #2a2a2a;background:#161616;
+  transition:color 0.15s;
+}
+.topbar a:hover{color:#aaa}
+.topbar h1{font-size:14px;font-weight:600;color:#ccc;flex:1}
+.save-all-btn{
+  padding:8px 18px;border-radius:10px;border:0.5px solid #2a5a3a;
+  background:#1e3a2a;color:#6aac7a;font-size:13px;font-weight:500;
+  cursor:pointer;transition:all 0.15s;white-space:nowrap;
+}
+.save-all-btn:hover{background:#253f2f}
+.save-all-btn:disabled{opacity:0.4;cursor:default}
+
+/* Loading / status */
+#status{
+  max-width:580px;margin:14px auto 0;padding:0 14px;
+  font-size:12px;color:#555;text-align:center;
+}
+#status.err{color:#c07a7a}
+#status.ok{color:#6aac7a}
+
+/* Word cards */
+.cards-wrap{max-width:580px;margin:0 auto;padding:14px;display:flex;flex-direction:column;gap:14px}
+
+.word-card{
+  background:#161616;border:0.5px solid #2a2a2a;border-radius:16px;
+  padding:16px 16px 12px;position:relative;
+}
+.word-card.saved{border-color:#2a5a3a;opacity:0.6}
+.card-num{
+  position:absolute;top:12px;left:16px;
+  font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#444;
+}
+.remove-btn{
+  position:absolute;top:10px;right:12px;
+  background:transparent;border:none;color:#3a3a3a;font-size:18px;
+  cursor:pointer;line-height:1;padding:2px 4px;transition:color 0.15s;
+}
+.remove-btn:hover{color:#c07a7a}
+
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:24px}
+@media(max-width:480px){.fields{grid-template-columns:1fr}}
+
+.field{display:flex;flex-direction:column;gap:5px}
+.field.full{grid-column:1/-1}
+.field label{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:#555}
+.field input,.field select{
+  padding:9px 12px;border-radius:10px;
+  border:0.5px solid #2e2e2e;background:#0d0d0d;color:#eee;
+  font-size:13px;outline:none;transition:border-color 0.2s;
+  width:100%;-webkit-appearance:none;
+}
+.field input:focus,.field select:focus{border-color:#555}
+.field input.err{border-color:#7c4a4a}
+.field select option{background:#1a1a1a}
+
+/* Category badge preview */
+.cat-preview{
+  display:inline-flex;align-items:center;gap:5px;margin-top:4px;
+  font-size:11px;padding:2px 10px;border-radius:10px;
+  background:#2a2a2a;color:#666;border:0.5px solid #333;
+  transition:all 0.2s;
+}
+
+/* Add-word button */
+.add-word-btn{
+  max-width:580px;margin:0 auto;padding:0 14px 14px;display:block;width:100%;
+}
+.add-word-btn button{
+  width:100%;padding:12px;border-radius:12px;
+  border:0.5px solid #333;background:transparent;color:#555;
+  font-size:13px;cursor:pointer;transition:all 0.15s;
+}
+.add-word-btn button:hover{background:#1a1a1a;color:#888}
+
+/* Saved pill on card */
+.saved-pill{
+  display:inline-block;font-size:10px;color:#6aac7a;
+  background:#4a7c5918;border:0.5px solid #4a7c5940;
+  border-radius:8px;padding:2px 8px;margin-top:6px;
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="index.html">&larr; Flashcards</a>
+  <h1>Add Vocabulary</h1>
+  <button class="save-all-btn" id="saveAllBtn" onclick="saveAll()">Save all</button>
+</div>
+
+<div id="status">Loading themes…</div>
+
+<div class="cards-wrap" id="cardsWrap"></div>
+
+<div class="add-word-btn">
+  <button id="addWordBtn" onclick="addCard()" disabled>+ Add another word</button>
+</div>
+
+<script>
+/* ── Firebase config ──────────────────────────────────────────────── */
+const firebaseConfig = {
+  apiKey:            "AIzaSyDuSZnygLFaNNzfzN6qjR1S0GHwD-hMVj4",
+  authDomain:        "polish-24ab6.firebaseapp.com",
+  projectId:         "polish-24ab6",
+  storageBucket:     "polish-24ab6.firebasestorage.app",
+  messagingSenderId: "379033735292",
+  appId:             "1:379033735292:web:e9872f7c46187ffbd339f9"
+};
+
+const themeColors = {
+  daily:"#4a7c59", transit:"#4a6a7c", food:"#7c6a4a", shop:"#7c4a6a",
+  social:"#4a4a7c", time:"#7c7c4a", work:"#6a4a7c", health:"#7c4a4a",
+  home:"#4a6a7c", numbers:"#7c5a4a", weather:"#4a7c6a",
+  colors:"#7c4a7c", family:"#5a7c4a", verbs:"#4a7c7c",
+  places:"#6a7c4a", body:"#7c6a5a"
+};
+
+/* ── State ────────────────────────────────────────────────────────── */
+let db = null;
+let themes = [];
+let cardCount = 0;
+
+/* ── Init ─────────────────────────────────────────────────────────── */
+(async () => {
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+
+  try {
+    const snap = await db.collection("themes").get();
+    themes = snap.docs.map(d => d.data()).sort((a,b)=>a.label.localeCompare(b.label));
+    setStatus("", "");
+    document.getElementById("addWordBtn").disabled = false;
+    document.getElementById("saveAllBtn").disabled = false;
+    addCard(); // start with one blank card
+  } catch (err) {
+    setStatus("Failed to load themes: " + err.message, "err");
+  }
+})();
+
+/* ── Status helper ────────────────────────────────────────────────── */
+function setStatus(msg, cls) {
+  const el = document.getElementById("status");
+  el.textContent = msg;
+  el.className = cls;
+}
+
+/* ── Build theme <select> options ─────────────────────────────────── */
+function buildThemeOptions(selectedId) {
+  return themes.map(th =>
+    `<option value="${th.id}" ${th.id === selectedId ? "selected" : ""}>${th.icon ? th.icon + " " : ""}${th.label}</option>`
+  ).join("");
+}
+
+/* ── Add a new blank word card ────────────────────────────────────── */
+function addCard(prefill = {}) {
+  cardCount++;
+  const id = "card" + cardCount;
+  const defaultTheme = themes.length ? themes[0].id : "";
+  const selectedTheme = prefill.t || defaultTheme;
+  const col = themeColors[selectedTheme] || "#555";
+
+  const div = document.createElement("div");
+  div.className = "word-card";
+  div.id = id;
+  div.innerHTML = `
+    <span class="card-num">#${cardCount}</span>
+    <button class="remove-btn" title="Remove" onclick="removeCard('${id}')">×</button>
+
+    <div class="fields">
+      <div class="field full">
+        <label>Category</label>
+        <select id="${id}-t" onchange="onThemeChange('${id}')">
+          ${buildThemeOptions(selectedTheme)}
+        </select>
+        <span class="cat-preview" id="${id}-preview" style="color:${col};background:${col}22;border-color:${col}44">
+          ${getCatLabel(selectedTheme)}
+        </span>
+      </div>
+
+      <div class="field full">
+        <label>Polish <span style="color:#7c4a4a">*</span></label>
+        <input type="text" id="${id}-p" placeholder="e.g. Dzień dobry." value="${esc(prefill.p||'')}">
+      </div>
+
+      <div class="field">
+        <label>Pronunciation</label>
+        <input type="text" id="${id}-r" placeholder="e.g. djen DOH-bry" value="${esc(prefill.r||'')}">
+      </div>
+
+      <div class="field">
+        <label>Keyword</label>
+        <input type="text" id="${id}-k" placeholder="e.g. dzień dobry" value="${esc(prefill.k||'')}">
+      </div>
+
+      <div class="field full">
+        <label>Arabic <span style="color:#7c4a4a">*</span></label>
+        <input type="text" id="${id}-a" placeholder="e.g. صباح الخير." value="${esc(prefill.a||'')}" dir="auto">
+      </div>
+
+      <div class="field full">
+        <label>Arabic transliteration</label>
+        <input type="text" id="${id}-at" placeholder="e.g. sabah al-khayr" value="${esc(prefill.at||'')}">
+      </div>
+
+      <div class="field full">
+        <label>English <span style="color:#7c4a4a">*</span></label>
+        <input type="text" id="${id}-e" placeholder="e.g. Good morning." value="${esc(prefill.e||'')}">
+      </div>
+    </div>
+  `;
+
+  document.getElementById("cardsWrap").appendChild(div);
+  // Focus the Polish field on the new card
+  setTimeout(() => document.getElementById(`${id}-p`).focus(), 60);
+}
+
+/* ── Remove a card ────────────────────────────────────────────────── */
+function removeCard(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+/* ── Theme change: update preview badge ──────────────────────────── */
+function onThemeChange(id) {
+  const val = document.getElementById(`${id}-t`).value;
+  const col = themeColors[val] || "#555";
+  const preview = document.getElementById(`${id}-preview`);
+  preview.textContent = getCatLabel(val);
+  preview.style.color = col;
+  preview.style.background = col + "22";
+  preview.style.borderColor = col + "44";
+}
+
+function getCatLabel(id) {
+  const th = themes.find(t => t.id === id);
+  return th ? (th.icon ? th.icon + " " : "") + th.label : id;
+}
+
+function esc(s) {
+  return s.replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+}
+
+/* ── Read one card's data, return null if invalid ─────────────────── */
+function readCard(id) {
+  const get = f => document.getElementById(`${id}-${f}`)?.value.trim() || "";
+  const p = get("p"), a = get("a"), e = get("e");
+
+  // Highlight missing required fields
+  let valid = true;
+  ["p","a","e"].forEach(f => {
+    const el = document.getElementById(`${id}-${f}`);
+    if (!el) return;
+    if (!el.value.trim()) { el.classList.add("err"); valid = false; }
+    else el.classList.remove("err");
+  });
+
+  if (!valid) return null;
+
+  return {
+    t:  get("t"),
+    p,
+    r:  get("r"),
+    a,
+    at: get("at"),
+    e,
+    k:  get("k") || p.toLowerCase().replace(/[.,?!]/g,"").trim(),
+  };
+}
+
+/* ── Save all unsaved cards ───────────────────────────────────────── */
+async function saveAll() {
+  const cards = [...document.querySelectorAll(".word-card:not(.saved)")];
+  if (cards.length === 0) { setStatus("Nothing to save.", ""); return; }
+
+  const saveBtn = document.getElementById("saveAllBtn");
+  saveBtn.disabled = true;
+  setStatus("Saving…", "");
+
+  // Validate all first
+  const entries = [];
+  let hasError = false;
+  for (const card of cards) {
+    const data = readCard(card.id);
+    if (!data) { hasError = true; }
+    else entries.push({ cardEl: card, data });
+  }
+  if (hasError) {
+    setStatus("Please fill in all required fields (marked in red).", "err");
+    saveBtn.disabled = false;
+    return;
+  }
+
+  // Write to Firestore in a batch
+  try {
+    const batch = db.batch();
+    entries.forEach(({ data }) => {
+      batch.set(db.collection("vocabulary").doc(), data);
+    });
+    await batch.commit();
+
+    // Mark cards as saved
+    entries.forEach(({ cardEl }) => {
+      cardEl.classList.add("saved");
+      const saved = document.createElement("div");
+      saved.className = "saved-pill";
+      saved.textContent = "✓ Saved";
+      cardEl.querySelector(".fields").after(saved);
+    });
+
+    setStatus(`✓ Saved ${entries.length} word${entries.length > 1 ? "s" : ""} to Firestore.`, "ok");
+  } catch (err) {
+    setStatus("Error: " + err.message, "err");
+  } finally {
+    saveBtn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>
