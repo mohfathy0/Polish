@@ -1,108 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Polish Flashcards — Firebase Seeder</title>
+/* =====================================================================
+   VOCABULARY DATA — Polish A1
+   Seeded to Firestore collections: 'vocabulary' and 'themes'
+   Used by: seed.html
+   ===================================================================== */
 
-<!-- Firebase Web SDK (same version as the app) -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#0d0d0d;color:#eee;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
-.card{background:#161616;border:0.5px solid #2a2a2a;border-radius:18px;padding:28px 24px;max-width:520px;width:100%}
-h1{font-size:16px;font-weight:600;color:#eee;margin-bottom:4px}
-.sub{font-size:12px;color:#555;margin-bottom:24px}
-label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#555;margin-bottom:6px}
-input{
-  width:100%;padding:10px 14px;border-radius:10px;border:0.5px solid #333;
-  background:#0d0d0d;color:#eee;font-size:13px;outline:none;
-  transition:border-color 0.2s;margin-bottom:16px;
-}
-input:focus{border-color:#555}
-.rule-note{
-  background:#1a1a0a;border:0.5px solid #4a4a1a;border-radius:10px;
-  padding:12px 14px;margin-bottom:20px;font-size:12px;color:#888;line-height:1.7;
-}
-.rule-note code{color:#aaa;background:#111;padding:1px 5px;border-radius:4px;font-size:11px}
-.btn{
-  width:100%;padding:13px;border-radius:12px;border:none;cursor:pointer;
-  font-size:14px;font-weight:500;transition:all 0.15s;
-}
-.btn-seed{background:#1e3a2a;color:#6aac7a;border:0.5px solid #2a5a3a}
-.btn-seed:hover{background:#253f2f}
-.btn-seed:disabled{opacity:0.4;cursor:default}
-.btn-clear{background:#1a1a1a;color:#888;border:0.5px solid #2a2a2a;margin-top:8px}
-.btn-clear:hover{background:#222}
-.btn-clear:disabled{opacity:0.4;cursor:default}
-.progress{margin-top:20px;display:none}
-.progress-bar-wrap{height:4px;background:#1a1a1a;border-radius:2px;overflow:hidden;margin-bottom:10px}
-.progress-bar{height:100%;background:#4a7c59;border-radius:2px;width:0;transition:width 0.2s}
-.log{
-  max-height:220px;overflow-y:auto;font-size:11px;line-height:1.8;
-  color:#555;font-family:monospace;
-}
-.log .ok{color:#6aac7a}
-.log .err{color:#c07a7a}
-.log .info{color:#888}
-.log .warn{color:#c0a04a}
-.summary{
-  margin-top:14px;padding:12px 14px;border-radius:10px;
-  font-size:12px;line-height:1.7;display:none;
-}
-.summary.success{background:#4a7c5918;border:0.5px solid #4a7c5940;color:#6aac7a}
-.summary.failure{background:#7c4a4a18;border:0.5px solid #7c4a4a40;color:#c07a7a}
-a{color:#6aaccc;font-size:11px}
-</style>
-</head>
-<body>
-<div class="card">
-  <h1>🌱 Firebase Seeder</h1>
-  <p class="sub">Upload vocabulary or grammar data to Firestore</p>
-
-  <label>Firebase API Key</label>
-  <input type="text" id="apiKey" value="AIzaSyDuSZnygLFaNNzfzN6qjR1S0GHwD-hMVj4" placeholder="AIzaSy...">
-
-  <label>Project ID</label>
-  <input type="text" id="projectId" value="polish-24ab6" placeholder="my-project-id">
-
-  <label>Messaging Sender ID</label>
-  <input type="text" id="messagingSenderId" value="379033735292" placeholder="123456789">
-
-  <label>App ID</label>
-  <input type="text" id="appId" value="1:379033735292:web:e9872f7c46187ffbd339f9" placeholder="1:123456789:web:abc123">
-
-  <label>Dataset to Seed</label>
-  <select id="datasetSelect" style="width:100%;padding:10px 14px;border-radius:10px;border:0.5px solid #333;background:#0d0d0d;color:#eee;font-size:13px;outline:none;margin-bottom:16px;cursor:pointer">
-    <option value="vocabulary">Vocabulary &amp; Themes (index.html)</option>
-    <option value="grammar_nouns">Grammar Nouns — Mianownik &amp; Biernik</option>
-  </select>
-
-  <div class="rule-note">
-    ⚠️ Before seeding, set your Firestore rules to allow writes:<br>
-    Firebase Console → Firestore Database → Rules → paste:<br>
-    <code>rules_version = '2';<br>service cloud.firestore {<br>&nbsp;&nbsp;match /databases/{db}/documents {<br>&nbsp;&nbsp;&nbsp;&nbsp;match /{doc=**} { allow read, write: if true; }<br>&nbsp;&nbsp;}<br>}</code><br>
-    After seeding, change <code>write: if true</code> back to <code>write: if false</code>.
-  </div>
-
-  <button class="btn btn-seed" id="seedBtn" onclick="startSeed()">Upload selected dataset to Firebase</button>
-  <button class="btn btn-clear" id="clearBtn" onclick="startClear()">Clear database</button>
-
-  <div class="progress" id="progressWrap">
-    <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
-    <div class="log" id="log"></div>
-  </div>
-  <div class="summary" id="summary"></div>
-</div>
-
-<script src="data/vocab-data.js"></script>
-<script src="data/grammar-nouns-data.js"></script>
-<script>
-/* inline data removed — loaded from data/vocab-data.js and data/grammar-nouns-data.js */
-/* eslint-disable */ (function(){ if(false) {
-const themesData = [
+const VOCAB_THEMES = [
   { id:"daily",   label:"Daily life",      icon:"🏠" },
   { id:"transit", label:"Getting around",  icon:"🚌" },
   { id:"food",    label:"Food & cafes",    icon:"☕" },
@@ -121,7 +23,7 @@ const themesData = [
   { id:"body",    label:"Body Parts",      icon:"🫀" },
 ];
 
-const vocabularyData = [
+const VOCAB_WORDS = [
   // ── DAILY ──────────────────────────────────────────────────────────────────
   {t:"daily",p:"Dzień dobry.",              r:"djen DOH-bry",                       a:"صباح الخير.",               at:"sabah al-khayr",                          e:"Good morning.",                         k:"dzień dobry"},
   {t:"daily",p:"Dobry wieczór.",            r:"DOH-bry vye-CHOOR",                  a:"مساء الخير.",               at:"masa' al-khayr",                          e:"Good evening.",                         k:"wieczór"},
@@ -253,34 +155,34 @@ const vocabularyData = [
   {t:"time",p:"W tym miesiącu.",               r:"v tym mye-SHON-tsoo",                 a:"في هذا الشهر.",                 at:"fi hadha al-shahr",               e:"This month.",                k:"miesiąc"},
   {t:"time",p:"Za tydzień.",                   r:"zah TY-djen",                         a:"بعد أسبوع.",                   at:"ba'd usbu'",                      e:"In a week.",                 k:"tydzień"},
   {t:"time",p:"Rano, po południu, wieczorem.", r:"RAH-noh, poh poh-WOO-dnyoo, vye-CHOH-rem", a:"صباحاً، بعد الظهر، مساءً.", at:"sabahan, ba'd al-zuhr, masa'an", e:"Morning, afternoon, evening.", k:"rano"},
-  {t:"time",p:"środa",      r:"SHRO-dah",        a:"الأربعاء", at:"al-arbi'a'",   e:"Wednesday",    k:"środa"},
-  {t:"time",p:"czwartek",   r:"CHVAR-tek",        a:"الخميس",   at:"al-khamis",    e:"Thursday",     k:"czwartek"},
-  {t:"time",p:"sobota",     r:"soh-BOH-tah",      a:"السبت",    at:"al-sabt",      e:"Saturday",     k:"sobota"},
-  {t:"time",p:"niedziela",  r:"nye-DJE-lah",      a:"الأحد",    at:"al-ahad",      e:"Sunday",       k:"niedziela"},
+  {t:"time",p:"środa",       r:"SHRO-dah",       a:"الأربعاء", at:"al-arbi'a'",   e:"Wednesday",    k:"środa"},
+  {t:"time",p:"czwartek",    r:"CHVAR-tek",       a:"الخميس",   at:"al-khamis",    e:"Thursday",     k:"czwartek"},
+  {t:"time",p:"sobota",      r:"soh-BOH-tah",     a:"السبت",    at:"al-sabt",      e:"Saturday",     k:"sobota"},
+  {t:"time",p:"niedziela",   r:"nye-DJE-lah",     a:"الأحد",    at:"al-ahad",      e:"Sunday",       k:"niedziela"},
   {t:"time",p:"poniedziałek",r:"poh-nye-JA-wek",  a:"الإثنين",  at:"al-ithnayn",   e:"Monday",       k:"poniedziałek"},
-  {t:"time",p:"wtorek",     r:"VTOH-rek",          a:"الثلاثاء", at:"al-thulatha'", e:"Tuesday",      k:"wtorek"},
-  {t:"time",p:"piątek",     r:"PYON-tek",          a:"الجمعة",   at:"al-jumu'a",    e:"Friday",       k:"piątek"},
-  {t:"time",p:"styczeń",    r:"STIH-chen",         a:"يناير",    at:"yanayir",      e:"January",      k:"styczeń"},
-  {t:"time",p:"luty",       r:"LOO-tih",           a:"فبراير",   at:"fibrayir",     e:"February",     k:"luty"},
-  {t:"time",p:"marzec",     r:"MAR-zets",          a:"مارس",     at:"maris",        e:"March",        k:"marzec"},
-  {t:"time",p:"kwiecień",   r:"KVYE-chen",         a:"أبريل",    at:"abril",        e:"April",        k:"kwiecień"},
-  {t:"time",p:"maj",        r:"my",                a:"مايو",     at:"mayo",         e:"May",          k:"maj"},
-  {t:"time",p:"czerwiec",   r:"CHER-vyets",        a:"يونيو",    at:"yunyu",        e:"June",         k:"czerwiec"},
-  {t:"time",p:"lipiec",     r:"LEE-pyets",         a:"يوليو",    at:"yulyu",        e:"July",         k:"lipiec"},
-  {t:"time",p:"sierpień",   r:"SHER-pyen",         a:"أغسطس",    at:"aghustu s",    e:"August",       k:"sierpień"},
-  {t:"time",p:"wrzesień",   r:"VJE-shen",          a:"سبتمبر",   at:"sibtambir",    e:"September",    k:"wrzesień"},
-  {t:"time",p:"październik",r:"paz-DJYER-neek",    a:"أكتوبر",   at:"uktubir",      e:"October",      k:"październik"},
-  {t:"time",p:"listopad",   r:"lees-TOH-pat",      a:"نوفمبر",   at:"nufambir",     e:"November",     k:"listopad"},
-  {t:"time",p:"grudzień",   r:"GROO-djen",         a:"ديسمبر",   at:"disambir",     e:"December",     k:"grudzień"},
-  {t:"time",p:"wiosna",     r:"VYOS-nah",          a:"ربيع",     at:"rabi'",        e:"spring",       k:"wiosna"},
-  {t:"time",p:"lato",       r:"LAH-toh",           a:"صيف",      at:"sayf",         e:"summer",       k:"lato"},
-  {t:"time",p:"jesień",     r:"YE-shen",           a:"خريف",     at:"kharif",       e:"autumn / fall",k:"jesień"},
-  {t:"time",p:"zima",       r:"ZEE-mah",           a:"شتاء",     at:"shita'",       e:"winter",       k:"zima"},
-  {t:"time",p:"dziś / dzisiaj",r:"djeesh / djee-SHAY",a:"اليوم", at:"al-yawm",      e:"today",        k:"dziś"},
-  {t:"time",p:"jutro",      r:"YOO-troh",          a:"غداً",     at:"ghadan",       e:"tomorrow",     k:"jutro"},
-  {t:"time",p:"wczoraj",    r:"VCHO-ray",          a:"أمس",      at:"ams",          e:"yesterday",    k:"wczoraj"},
-  {t:"time",p:"teraz",      r:"TE-ras",            a:"الآن",     at:"al-an",        e:"now",          k:"teraz"},
-  {t:"time",p:"później",    r:"POOZH-nyey",        a:"لاحقاً",   at:"lahiqan",      e:"later",        k:"później"},
+  {t:"time",p:"wtorek",      r:"VTOH-rek",        a:"الثلاثاء", at:"al-thulatha'", e:"Tuesday",      k:"wtorek"},
+  {t:"time",p:"piątek",      r:"PYON-tek",        a:"الجمعة",   at:"al-jumu'a",    e:"Friday",       k:"piątek"},
+  {t:"time",p:"styczeń",     r:"STIH-chen",       a:"يناير",    at:"yanayir",      e:"January",      k:"styczeń"},
+  {t:"time",p:"luty",        r:"LOO-tih",         a:"فبراير",   at:"fibrayir",     e:"February",     k:"luty"},
+  {t:"time",p:"marzec",      r:"MAR-zets",        a:"مارس",     at:"maris",        e:"March",        k:"marzec"},
+  {t:"time",p:"kwiecień",    r:"KVYE-chen",       a:"أبريل",    at:"abril",        e:"April",        k:"kwiecień"},
+  {t:"time",p:"maj",         r:"my",              a:"مايو",     at:"mayo",         e:"May",          k:"maj"},
+  {t:"time",p:"czerwiec",    r:"CHER-vyets",      a:"يونيو",    at:"yunyu",        e:"June",         k:"czerwiec"},
+  {t:"time",p:"lipiec",      r:"LEE-pyets",       a:"يوليو",    at:"yulyu",        e:"July",         k:"lipiec"},
+  {t:"time",p:"sierpień",    r:"SHER-pyen",       a:"أغسطس",    at:"aghustu s",    e:"August",       k:"sierpień"},
+  {t:"time",p:"wrzesień",    r:"VJE-shen",        a:"سبتمبر",   at:"sibtambir",    e:"September",    k:"wrzesień"},
+  {t:"time",p:"październik", r:"paz-DJYER-neek",  a:"أكتوبر",   at:"uktubir",      e:"October",      k:"październik"},
+  {t:"time",p:"listopad",    r:"lees-TOH-pat",    a:"نوفمبر",   at:"nufambir",     e:"November",     k:"listopad"},
+  {t:"time",p:"grudzień",    r:"GROO-djen",       a:"ديسمبر",   at:"disambir",     e:"December",     k:"grudzień"},
+  {t:"time",p:"wiosna",      r:"VYOS-nah",        a:"ربيع",     at:"rabi'",        e:"spring",       k:"wiosna"},
+  {t:"time",p:"lato",        r:"LAH-toh",         a:"صيف",      at:"sayf",         e:"summer",       k:"lato"},
+  {t:"time",p:"jesień",      r:"YE-shen",         a:"خريف",     at:"kharif",       e:"autumn / fall",k:"jesień"},
+  {t:"time",p:"zima",        r:"ZEE-mah",         a:"شتاء",     at:"shita'",       e:"winter",       k:"zima"},
+  {t:"time",p:"dziś / dzisiaj",r:"djeesh / djee-SHAY",a:"اليوم", at:"al-yawm",     e:"today",        k:"dziś"},
+  {t:"time",p:"jutro",       r:"YOO-troh",        a:"غداً",     at:"ghadan",       e:"tomorrow",     k:"jutro"},
+  {t:"time",p:"wczoraj",     r:"VCHO-ray",        a:"أمس",      at:"ams",          e:"yesterday",    k:"wczoraj"},
+  {t:"time",p:"teraz",       r:"TE-ras",          a:"الآن",     at:"al-an",        e:"now",          k:"teraz"},
+  {t:"time",p:"później",     r:"POOZH-nyey",      a:"لاحقاً",   at:"lahiqan",      e:"later",        k:"później"},
 
   // ── WORK ───────────────────────────────────────────────────────────────────
   {t:"work",p:"Gdzie pracujesz?",             r:"gdye prah-TSOO-yesh",                  a:"أين تعمل؟",               at:"ayna ta'mal?",                   e:"Where do you work?",          k:"pracujesz"},
@@ -311,333 +213,144 @@ const vocabularyData = [
   {t:"home",p:"Ogrzewanie nie działa.",         r:"oh-gzheh-VAH-nye nyeh DJA-wah",              a:"التدفئة لا تعمل.",       at:"al-tadfi'a la ta'mal",         e:"The heating doesn't work.",             k:"ogrzewanie"},
 
   // ── NUMBERS ────────────────────────────────────────────────────────────────
-  {t:"numbers",p:"zero",           r:"ZE-roh",                 a:"صفر",    at:"sifr",              e:"zero",              k:"zero"},
-  {t:"numbers",p:"jeden",          r:"YEH-den",                a:"واحد",   at:"wahid",             e:"one",               k:"jeden"},
-  {t:"numbers",p:"dwa",            r:"dvah",                   a:"اثنان",  at:"ithnan",            e:"two",               k:"dwa"},
-  {t:"numbers",p:"trzy",           r:"tshih",                  a:"ثلاثة",  at:"thalatha",          e:"three",             k:"trzy"},
-  {t:"numbers",p:"cztery",         r:"CHTE-rih",               a:"أربعة",  at:"arba'a",            e:"four",              k:"cztery"},
-  {t:"numbers",p:"pięć",           r:"pyench",                 a:"خمسة",   at:"khamsa",            e:"five",              k:"pięć"},
-  {t:"numbers",p:"sześć",          r:"sheshch",                a:"ستة",    at:"sitta",             e:"six",               k:"sześć"},
-  {t:"numbers",p:"siedem",         r:"SHYE-dem",               a:"سبعة",   at:"sab'a",             e:"seven",             k:"siedem"},
-  {t:"numbers",p:"osiem",          r:"OH-shem",                a:"ثمانية", at:"thamaniya",         e:"eight",             k:"osiem"},
-  {t:"numbers",p:"dziewięć",       r:"DJE-vyench",             a:"تسعة",   at:"tis'a",             e:"nine",              k:"dziewięć"},
-  {t:"numbers",p:"dziesięć",       r:"DJE-shench",             a:"عشرة",   at:"'ashara",           e:"ten",               k:"dziesięć"},
-  {t:"numbers",p:"jedenaście",     r:"ye-de-NASH-chye",        a:"أحد عشر",at:"ahad 'ashar",       e:"eleven",            k:"jedenaście"},
-  {t:"numbers",p:"dwanaście",      r:"dva-NASH-chye",          a:"اثنا عشر",at:"ithna 'ashar",     e:"twelve",            k:"dwanaście"},
-  {t:"numbers",p:"trzynaście",     r:"tshih-NASH-chye",        a:"ثلاثة عشر",at:"thalatha 'ashar", e:"thirteen",          k:"trzynaście"},
-  {t:"numbers",p:"czternaście",    r:"chter-NASH-chye",        a:"أربعة عشر",at:"arba'a 'ashar",   e:"fourteen",          k:"czternaście"},
-  {t:"numbers",p:"piętnaście",     r:"pyent-NASH-chye",        a:"خمسة عشر",at:"khamsa 'ashar",    e:"fifteen",           k:"piętnaście"},
-  {t:"numbers",p:"szesnaście",     r:"shes-NASH-chye",         a:"ستة عشر", at:"sitta 'ashar",     e:"sixteen",           k:"szesnaście"},
-  {t:"numbers",p:"siedemnaście",   r:"shye-dem-NASH-chye",     a:"سبعة عشر",at:"sab'a 'ashar",     e:"seventeen",         k:"siedemnaście"},
-  {t:"numbers",p:"osiemnaście",    r:"oh-shem-NASH-chye",      a:"ثمانية عشر",at:"thamaniya 'ashar",e:"eighteen",         k:"osiemnaście"},
-  {t:"numbers",p:"dziewiętnaście", r:"djye-vyent-NASH-chye",   a:"تسعة عشر",at:"tis'a 'ashar",     e:"nineteen",          k:"dziewiętnaście"},
-  {t:"numbers",p:"dwadzieścia",    r:"dva-DJESH-chyah",        a:"عشرون",  at:"'ishrun",           e:"twenty",            k:"dwadzieścia"},
-  {t:"numbers",p:"trzydzieści",    r:"tshih-DJESH-chee",       a:"ثلاثون", at:"thalathun",         e:"thirty",            k:"trzydzieści"},
-  {t:"numbers",p:"czterdzieści",   r:"chter-DJESH-chee",       a:"أربعون", at:"arba'un",           e:"forty",             k:"czterdzieści"},
-  {t:"numbers",p:"pięćdziesiąt",   r:"pyench-DJE-shont",       a:"خمسون",  at:"khamsun",           e:"fifty",             k:"pięćdziesiąt"},
-  {t:"numbers",p:"sto",            r:"stoh",                   a:"مئة",    at:"mi'a",              e:"one hundred",       k:"sto"},
-  {t:"numbers",p:"tysiąc",         r:"TIH-shonts",             a:"ألف",    at:"alf",               e:"one thousand",      k:"tysiąc"},
-  {t:"numbers",p:"Mam trzydzieści lat.",     r:"mam tshih-DJESH-chee lat",       a:"عمري ثلاثون سنة.",     at:"'umri thalathun sana",      e:"I am thirty years old.",        k:"trzydzieści"},
-  {t:"numbers",p:"Poproszę dwa.",            r:"poh-PROH-sheh dvah",             a:"اثنين، من فضلك.",      at:"ithnayn, min fadlak",        e:"Two, please.",                  k:"dwa"},
-  {t:"numbers",p:"Na pierwszym piętrze.",    r:"nah PYERV-shym PYEN-tsheh",      a:"في الطابق الأول.",     at:"fil-tabiq al-awwal",         e:"On the first floor.",           k:"piętro"},
-  {t:"numbers",p:"Mój numer telefonu to...", r:"mooy NOO-mer te-le-FOH-noo toh", a:"رقم هاتفي هو...",      at:"raqm hatifi huwa...",        e:"My phone number is...",         k:"numer telefonu"},
-  {t:"numbers",p:"To kosztuje sto złotych.", r:"toh kosh-TOO-yeh stoh ZWOH-tih", a:"هذا يكلف مئة زلوتي.",  at:"hadha yukallifu mi'at zloti", e:"This costs one hundred złoty.", k:"sto złotych"},
+  {t:"numbers",p:"zero",            r:"ZE-roh",              a:"صفر",     at:"sifr",              e:"zero",              k:"zero"},
+  {t:"numbers",p:"jeden",           r:"YEH-den",             a:"واحد",    at:"wahid",             e:"one",               k:"jeden"},
+  {t:"numbers",p:"dwa",             r:"dvah",                a:"اثنان",   at:"ithnan",            e:"two",               k:"dwa"},
+  {t:"numbers",p:"trzy",            r:"tshih",               a:"ثلاثة",   at:"thalatha",          e:"three",             k:"trzy"},
+  {t:"numbers",p:"cztery",          r:"CHTE-rih",            a:"أربعة",   at:"arba'a",            e:"four",              k:"cztery"},
+  {t:"numbers",p:"pięć",            r:"pyench",              a:"خمسة",    at:"khamsa",            e:"five",              k:"pięć"},
+  {t:"numbers",p:"sześć",           r:"sheshch",             a:"ستة",     at:"sitta",             e:"six",               k:"sześć"},
+  {t:"numbers",p:"siedem",          r:"SHYE-dem",            a:"سبعة",    at:"sab'a",             e:"seven",             k:"siedem"},
+  {t:"numbers",p:"osiem",           r:"OH-shem",             a:"ثمانية",  at:"thamaniya",         e:"eight",             k:"osiem"},
+  {t:"numbers",p:"dziewięć",        r:"DJE-vyench",          a:"تسعة",    at:"tis'a",             e:"nine",              k:"dziewięć"},
+  {t:"numbers",p:"dziesięć",        r:"DJE-shench",          a:"عشرة",    at:"'ashara",           e:"ten",               k:"dziesięć"},
+  {t:"numbers",p:"jedenaście",      r:"ye-de-NASH-chye",     a:"أحد عشر", at:"ahad 'ashar",       e:"eleven",            k:"jedenaście"},
+  {t:"numbers",p:"dwanaście",       r:"dva-NASH-chye",       a:"اثنا عشر",at:"ithna 'ashar",      e:"twelve",            k:"dwanaście"},
+  {t:"numbers",p:"trzynaście",      r:"tshih-NASH-chye",     a:"ثلاثة عشر",at:"thalatha 'ashar",  e:"thirteen",          k:"trzynaście"},
+  {t:"numbers",p:"czternaście",     r:"chter-NASH-chye",     a:"أربعة عشر",at:"arba'a 'ashar",    e:"fourteen",          k:"czternaście"},
+  {t:"numbers",p:"piętnaście",      r:"pyent-NASH-chye",     a:"خمسة عشر",at:"khamsa 'ashar",     e:"fifteen",           k:"piętnaście"},
+  {t:"numbers",p:"szesnaście",      r:"shes-NASH-chye",      a:"ستة عشر", at:"sitta 'ashar",      e:"sixteen",           k:"szesnaście"},
+  {t:"numbers",p:"siedemnaście",    r:"shye-dem-NASH-chye",  a:"سبعة عشر",at:"sab'a 'ashar",      e:"seventeen",         k:"siedemnaście"},
+  {t:"numbers",p:"osiemnaście",     r:"oh-shem-NASH-chye",   a:"ثمانية عشر",at:"thamaniya 'ashar",e:"eighteen",          k:"osiemnaście"},
+  {t:"numbers",p:"dziewiętnaście",  r:"djye-vyent-NASH-chye",a:"تسعة عشر",at:"tis'a 'ashar",      e:"nineteen",          k:"dziewiętnaście"},
+  {t:"numbers",p:"dwadzieścia",     r:"dva-DJESH-chyah",     a:"عشرون",   at:"'ishrun",           e:"twenty",            k:"dwadzieścia"},
+  {t:"numbers",p:"trzydzieści",     r:"tshih-DJESH-chee",    a:"ثلاثون",  at:"thalathun",         e:"thirty",            k:"trzydzieści"},
+  {t:"numbers",p:"czterdzieści",    r:"chter-DJESH-chee",    a:"أربعون",  at:"arba'un",           e:"forty",             k:"czterdzieści"},
+  {t:"numbers",p:"pięćdziesiąt",    r:"pyench-DJE-shont",    a:"خمسون",   at:"khamsun",           e:"fifty",             k:"pięćdziesiąt"},
+  {t:"numbers",p:"sto",             r:"stoh",                a:"مئة",     at:"mi'a",              e:"one hundred",       k:"sto"},
+  {t:"numbers",p:"tysiąc",          r:"TIH-shonts",          a:"ألف",     at:"alf",               e:"one thousand",      k:"tysiąc"},
+  {t:"numbers",p:"Mam trzydzieści lat.",     r:"mam tshih-DJESH-chee lat",       a:"عمري ثلاثون سنة.",     at:"'umri thalathun sana",       e:"I am thirty years old.",        k:"trzydzieści"},
+  {t:"numbers",p:"Poproszę dwa.",            r:"poh-PROH-sheh dvah",             a:"اثنين، من فضلك.",      at:"ithnayn, min fadlak",         e:"Two, please.",                  k:"dwa"},
+  {t:"numbers",p:"Na pierwszym piętrze.",    r:"nah PYERV-shym PYEN-tsheh",      a:"في الطابق الأول.",     at:"fil-tabiq al-awwal",          e:"On the first floor.",           k:"piętro"},
+  {t:"numbers",p:"Mój numer telefonu to...", r:"mooy NOO-mer te-le-FOH-noo toh", a:"رقم هاتفي هو...",      at:"raqm hatifi huwa...",         e:"My phone number is...",         k:"numer telefonu"},
+  {t:"numbers",p:"To kosztuje sto złotych.", r:"toh kosh-TOO-yeh stoh ZWOH-tih", a:"هذا يكلف مئة زلوتي.",  at:"hadha yukallifu mi'at zloti",  e:"This costs one hundred złoty.", k:"sto złotych"},
 
   // ── WEATHER ────────────────────────────────────────────────────────────────
-  {t:"weather",p:"Jaka jest pogoda?",    r:"YAH-kah yest poh-GOH-dah",         a:"كيف الطقس؟",             at:"kayfa al-taqs?",              e:"What is the weather like?",    k:"pogoda"},
-  {t:"weather",p:"Pada deszcz.",         r:"PAH-dah deshch",                    a:"المطر ينزل.",             at:"al-matar yanzil",             e:"It's raining.",                k:"deszcz"},
-  {t:"weather",p:"Jest słonecznie.",     r:"yest swoh-NECH-nye",                a:"الجو مشمس.",              at:"al-jaww mushmis",             e:"It's sunny.",                  k:"słonecznie"},
-  {t:"weather",p:"Jest bardzo zimno.",   r:"yest BAR-dzoh ZEEM-noh",            a:"الجو بارد جداً.",         at:"al-jaww barid jiddan",        e:"It's very cold.",              k:"zimno"},
-  {t:"weather",p:"Weź parasol.",         r:"vezh pah-RAH-sol",                  a:"خذ المظلة.",               at:"khudh al-mizalla",            e:"Take an umbrella.",            k:"parasol"},
-  {t:"weather",p:"Jest pochmurno.",      r:"yest poh-HMOOR-noh",                a:"الجو غائم.",              at:"al-jaww gha'im",              e:"It's cloudy.",                 k:"pochmurno"},
-  {t:"weather",p:"Wieje wiatr.",         r:"VYE-ye VYATR",                      a:"الريح تهب.",               at:"al-rih tahub",                e:"The wind is blowing.",         k:"wiatr"},
-  {t:"weather",p:"Pada śnieg.",          r:"PAH-dah shnyeg",                    a:"الثلج ينزل.",              at:"al-thalj yanzil",             e:"It's snowing.",                k:"śnieg"},
-  {t:"weather",p:"Jest ciepło.",         r:"yest CHYEP-woh",                    a:"الجو دافئ.",               at:"al-jaww dafi'",               e:"It's warm.",                   k:"ciepło"},
-  {t:"weather",p:"Jaka temperatura?",   r:"YAH-kah tem-pe-RAH-too-rah",        a:"كم درجة الحرارة؟",         at:"kam darajat al-harara?",      e:"What is the temperature?",     k:"temperatura"},
+  {t:"weather",p:"Jaka jest pogoda?",    r:"YAH-kah yest poh-GOH-dah",        a:"كيف الطقس؟",             at:"kayfa al-taqs?",             e:"What is the weather like?",    k:"pogoda"},
+  {t:"weather",p:"Pada deszcz.",         r:"PAH-dah deshch",                   a:"المطر ينزل.",             at:"al-matar yanzil",            e:"It's raining.",                k:"deszcz"},
+  {t:"weather",p:"Jest słonecznie.",     r:"yest swoh-NECH-nye",               a:"الجو مشمس.",              at:"al-jaww mushmis",            e:"It's sunny.",                  k:"słonecznie"},
+  {t:"weather",p:"Jest bardzo zimno.",   r:"yest BAR-dzoh ZEEM-noh",           a:"الجو بارد جداً.",         at:"al-jaww barid jiddan",       e:"It's very cold.",              k:"zimno"},
+  {t:"weather",p:"Weź parasol.",         r:"vezh pah-RAH-sol",                 a:"خذ المظلة.",               at:"khudh al-mizalla",           e:"Take an umbrella.",            k:"parasol"},
+  {t:"weather",p:"Jest pochmurno.",      r:"yest poh-HMOOR-noh",               a:"الجو غائم.",              at:"al-jaww gha'im",             e:"It's cloudy.",                 k:"pochmurno"},
+  {t:"weather",p:"Wieje wiatr.",         r:"VYE-ye VYATR",                     a:"الريح تهب.",               at:"al-rih tahub",               e:"The wind is blowing.",         k:"wiatr"},
+  {t:"weather",p:"Pada śnieg.",          r:"PAH-dah shnyeg",                   a:"الثلج ينزل.",              at:"al-thalj yanzil",            e:"It's snowing.",                k:"śnieg"},
+  {t:"weather",p:"Jest ciepło.",         r:"yest CHYEP-woh",                   a:"الجو دافئ.",               at:"al-jaww dafi'",              e:"It's warm.",                   k:"ciepło"},
+  {t:"weather",p:"Jaka temperatura?",   r:"YAH-kah tem-pe-RAH-too-rah",       a:"كم درجة الحرارة؟",         at:"kam darajat al-harara?",     e:"What is the temperature?",     k:"temperatura"},
 
   // ── COLORS ─────────────────────────────────────────────────────────────────
-  {t:"colors",p:"czerwony",     r:"cher-VOH-nih",         a:"أحمر",         at:"ahmar",        e:"red",         k:"czerwony"},
-  {t:"colors",p:"niebieski",    r:"nye-BYES-kee",         a:"أزرق",         at:"azraq",        e:"blue",        k:"niebieski"},
-  {t:"colors",p:"zielony",      r:"zhe-LOH-nih",          a:"أخضر",         at:"akhdar",       e:"green",       k:"zielony"},
-  {t:"colors",p:"żółty",        r:"ZHOOL-tih",            a:"أصفر",         at:"asfar",        e:"yellow",      k:"żółty"},
-  {t:"colors",p:"czarny",       r:"CHAR-nih",             a:"أسود",         at:"aswad",        e:"black",       k:"czarny"},
-  {t:"colors",p:"biały",        r:"BYAH-wih",             a:"أبيض",         at:"abyad",        e:"white",       k:"biały"},
-  {t:"colors",p:"szary",        r:"SHA-rih",              a:"رمادي",        at:"ramadi",       e:"grey",        k:"szary"},
-  {t:"colors",p:"brązowy",      r:"bron-ZOH-vih",         a:"بني",          at:"bunni",        e:"brown",       k:"brązowy"},
-  {t:"colors",p:"różowy",       r:"roo-ZHOH-vih",         a:"وردي",         at:"wardi",        e:"pink",        k:"różowy"},
-  {t:"colors",p:"pomarańczowy", r:"poh-mah-ron-CHOH-vih", a:"برتقالي",      at:"burtuqali",    e:"orange",      k:"pomarańczowy"},
-  {t:"colors",p:"fioletowy",    r:"fyo-le-TOH-vih",       a:"بنفسجي",       at:"banafsaji",    e:"purple",      k:"fioletowy"},
-  {t:"colors",p:"Jaki to kolor?",r:"YAH-kee toh KOH-lor", a:"ما هذا اللون؟",at:"ma hadha al-lawn?",e:"What color is this?",k:"kolor"},
+  {t:"colors",p:"czerwony",      r:"cher-VOH-nih",         a:"أحمر",          at:"ahmar",             e:"red",             k:"czerwony"},
+  {t:"colors",p:"niebieski",     r:"nye-BYES-kee",         a:"أزرق",          at:"azraq",             e:"blue",            k:"niebieski"},
+  {t:"colors",p:"zielony",       r:"zhe-LOH-nih",          a:"أخضر",          at:"akhdar",            e:"green",           k:"zielony"},
+  {t:"colors",p:"żółty",         r:"ZHOOL-tih",            a:"أصفر",          at:"asfar",             e:"yellow",          k:"żółty"},
+  {t:"colors",p:"czarny",        r:"CHAR-nih",             a:"أسود",          at:"aswad",             e:"black",           k:"czarny"},
+  {t:"colors",p:"biały",         r:"BYAH-wih",             a:"أبيض",          at:"abyad",             e:"white",           k:"biały"},
+  {t:"colors",p:"szary",         r:"SHA-rih",              a:"رمادي",         at:"ramadi",            e:"grey",            k:"szary"},
+  {t:"colors",p:"brązowy",       r:"bron-ZOH-vih",         a:"بني",           at:"bunni",             e:"brown",           k:"brązowy"},
+  {t:"colors",p:"różowy",        r:"roo-ZHOH-vih",         a:"وردي",          at:"wardi",             e:"pink",            k:"różowy"},
+  {t:"colors",p:"pomarańczowy",  r:"poh-mah-ron-CHOH-vih", a:"برتقالي",       at:"burtuqali",         e:"orange",          k:"pomarańczowy"},
+  {t:"colors",p:"fioletowy",     r:"fyo-le-TOH-vih",       a:"بنفسجي",        at:"banafsaji",         e:"purple",          k:"fioletowy"},
+  {t:"colors",p:"Jaki to kolor?",r:"YAH-kee toh KOH-lor",  a:"ما هذا اللون؟", at:"ma hadha al-lawn?", e:"What color is this?", k:"kolor"},
 
   // ── FAMILY ─────────────────────────────────────────────────────────────────
-  {t:"family",p:"mama",     r:"MAH-mah",     a:"ماما",       at:"mama",          e:"mom",           k:"mama"},
-  {t:"family",p:"tata",     r:"TAH-tah",     a:"بابا",       at:"baba",          e:"dad",           k:"tata"},
-  {t:"family",p:"matka",    r:"MAT-kah",     a:"أم",         at:"umm",           e:"mother",        k:"matka"},
-  {t:"family",p:"ojciec",   r:"OY-chyets",   a:"أب",         at:"ab",            e:"father",        k:"ojciec"},
-  {t:"family",p:"brat",     r:"braht",       a:"أخ",         at:"akh",           e:"brother",       k:"brat"},
-  {t:"family",p:"siostra",  r:"SYOS-trah",   a:"أخت",        at:"ukht",          e:"sister",        k:"siostra"},
-  {t:"family",p:"syn",      r:"sihn",        a:"ابن",        at:"ibn",           e:"son",           k:"syn"},
-  {t:"family",p:"córka",    r:"TSOOR-kah",   a:"ابنة",       at:"ibna",          e:"daughter",      k:"córka"},
-  {t:"family",p:"dziadek",  r:"DJAH-dek",    a:"جد",         at:"jadd",          e:"grandfather",   k:"dziadek"},
-  {t:"family",p:"babcia",   r:"BAB-chyah",   a:"جدة",        at:"jadda",         e:"grandmother",   k:"babcia"},
-  {t:"family",p:"mąż",      r:"monzh",       a:"زوج",        at:"zawj",          e:"husband",       k:"mąż"},
-  {t:"family",p:"żona",     r:"ZHOH-nah",    a:"زوجة",       at:"zawja",         e:"wife",          k:"żona"},
-  {t:"family",p:"dziecko",  r:"DJETS-koh",   a:"طفل",        at:"tifl",          e:"child",         k:"dziecko"},
-  {t:"family",p:"wujek",    r:"VOO-yek",     a:"عم / خال",   at:"'amm / khal",   e:"uncle",         k:"wujek"},
-  {t:"family",p:"ciocia",   r:"CHYO-chyah",  a:"عمة / خالة", at:"'amma / khala", e:"aunt",          k:"ciocia"},
-  {t:"family",p:"rodzina",  r:"roh-DJEE-nah",a:"عائلة",      at:"'a'ila",        e:"family",        k:"rodzina"},
+  {t:"family",p:"mama",      r:"MAH-mah",      a:"ماما",        at:"mama",          e:"mom",           k:"mama"},
+  {t:"family",p:"tata",      r:"TAH-tah",      a:"بابا",        at:"baba",          e:"dad",           k:"tata"},
+  {t:"family",p:"matka",     r:"MAT-kah",      a:"أم",          at:"umm",           e:"mother",        k:"matka"},
+  {t:"family",p:"ojciec",    r:"OY-chyets",    a:"أب",          at:"ab",            e:"father",        k:"ojciec"},
+  {t:"family",p:"brat",      r:"braht",        a:"أخ",          at:"akh",           e:"brother",       k:"brat"},
+  {t:"family",p:"siostra",   r:"SYOS-trah",    a:"أخت",         at:"ukht",          e:"sister",        k:"siostra"},
+  {t:"family",p:"syn",       r:"sihn",         a:"ابن",         at:"ibn",           e:"son",           k:"syn"},
+  {t:"family",p:"córka",     r:"TSOOR-kah",    a:"ابنة",        at:"ibna",          e:"daughter",      k:"córka"},
+  {t:"family",p:"dziadek",   r:"DJAH-dek",     a:"جد",          at:"jadd",          e:"grandfather",   k:"dziadek"},
+  {t:"family",p:"babcia",    r:"BAB-chyah",    a:"جدة",         at:"jadda",         e:"grandmother",   k:"babcia"},
+  {t:"family",p:"mąż",       r:"monzh",        a:"زوج",         at:"zawj",          e:"husband",       k:"mąż"},
+  {t:"family",p:"żona",      r:"ZHOH-nah",     a:"زوجة",        at:"zawja",         e:"wife",          k:"żona"},
+  {t:"family",p:"dziecko",   r:"DJETS-koh",    a:"طفل",         at:"tifl",          e:"child",         k:"dziecko"},
+  {t:"family",p:"wujek",     r:"VOO-yek",      a:"عم / خال",    at:"'amm / khal",   e:"uncle",         k:"wujek"},
+  {t:"family",p:"ciocia",    r:"CHYO-chyah",   a:"عمة / خالة",  at:"'amma / khala", e:"aunt",          k:"ciocia"},
+  {t:"family",p:"rodzina",   r:"roh-DJEE-nah", a:"عائلة",       at:"'a'ila",        e:"family",        k:"rodzina"},
 
   // ── VERBS ──────────────────────────────────────────────────────────────────
-  {t:"verbs",p:"Jestem...",    r:"YES-tem",         a:"أنا...",          at:"ana...",           e:"I am...",           k:"jestem"},
-  {t:"verbs",p:"Mam...",       r:"mam",             a:"لدي... / عندي...",at:"ladayya... / 'indi...",e:"I have...",      k:"mam"},
-  {t:"verbs",p:"Chcę...",      r:"htseh",           a:"أريد...",         at:"ureed...",         e:"I want...",         k:"chcę"},
-  {t:"verbs",p:"Mogę...",      r:"MOH-geh",         a:"أستطيع...",       at:"astati'...",       e:"I can...",          k:"mogę"},
-  {t:"verbs",p:"Idę...",       r:"EE-deh",          a:"أذهب...",         at:"adhhab...",        e:"I go...",           k:"idę"},
-  {t:"verbs",p:"Jadę...",      r:"YAH-deh",         a:"أسافر / أركب...", at:"usafir / arkab...",e:"I travel / ride...",k:"jadę"},
-  {t:"verbs",p:"Jem...",       r:"yem",             a:"آكل...",          at:"akul...",          e:"I eat...",          k:"jem"},
-  {t:"verbs",p:"Piję...",      r:"PEE-yeh",         a:"أشرب...",         at:"ashrab...",        e:"I drink...",        k:"piję"},
-  {t:"verbs",p:"Lubię...",     r:"LOO-byeh",        a:"أحب...",          at:"uhibb...",         e:"I like...",         k:"lubię"},
-  {t:"verbs",p:"Wiem...",      r:"vyem",            a:"أعرف...",         at:"a'rif...",         e:"I know...",         k:"wiem"},
-  {t:"verbs",p:"Czytam...",    r:"CHIH-tam",        a:"أقرأ...",         at:"aqra'...",         e:"I read...",         k:"czytam"},
-  {t:"verbs",p:"Piszę...",     r:"PEE-sheh",        a:"أكتب...",         at:"aktub...",         e:"I write...",        k:"piszę"},
-  {t:"verbs",p:"Słucham...",   r:"SWOO-kham",       a:"أستمع...",        at:"astami'...",       e:"I listen...",       k:"słucham"},
-  {t:"verbs",p:"Mówię...",     r:"MOO-vyeh",        a:"أتكلم...",        at:"atakallam...",     e:"I speak...",        k:"mówię"},
-  {t:"verbs",p:"Widzę...",     r:"VEE-dzeh",        a:"أرى...",          at:"ara...",           e:"I see...",          k:"widzę"},
-  {t:"verbs",p:"Śpię.",        r:"shpyeh",          a:"أنام.",           at:"anam",             e:"I sleep.",          k:"śpię"},
-  {t:"verbs",p:"Pracuję...",   r:"prah-TSOO-yeh",   a:"أعمل...",         at:"a'mal...",         e:"I work...",         k:"pracuję"},
-  {t:"verbs",p:"Mieszkam w...",r:"myesh-KAM v",     a:"أسكن في...",      at:"askun fi...",      e:"I live in...",      k:"mieszkam"},
-  {t:"verbs",p:"Uczę się...",  r:"OO-cheh sheh",    a:"أتعلم...",        at:"ata'allam...",     e:"I learn...",        k:"uczę się"},
-  {t:"verbs",p:"Rozumiem...",  r:"roh-ZOO-myem",    a:"أفهم...",         at:"afham...",         e:"I understand...",   k:"rozumiem"},
-  {t:"verbs",p:"Oglądam...",   r:"oh-GLON-dam",     a:"أشاهد...",        at:"ushahid...",       e:"I watch...",        k:"oglądam"},
-  {t:"verbs",p:"Daję...",      r:"DAH-yeh",         a:"أعطي...",         at:"u'ti...",          e:"I give...",         k:"daję"},
-  {t:"verbs",p:"Biorę...",     r:"BYOH-reh",        a:"آخذ...",          at:"akhudh...",        e:"I take...",         k:"biorę"},
+  {t:"verbs",p:"Jestem...",    r:"YES-tem",       a:"أنا...",           at:"ana...",            e:"I am...",           k:"jestem"},
+  {t:"verbs",p:"Mam...",       r:"mam",           a:"لدي... / عندي...", at:"ladayya... / 'indi...",e:"I have...",      k:"mam"},
+  {t:"verbs",p:"Chcę...",      r:"htseh",         a:"أريد...",          at:"ureed...",          e:"I want...",         k:"chcę"},
+  {t:"verbs",p:"Mogę...",      r:"MOH-geh",       a:"أستطيع...",        at:"astati'...",        e:"I can...",          k:"mogę"},
+  {t:"verbs",p:"Idę...",       r:"EE-deh",        a:"أذهب...",          at:"adhhab...",         e:"I go...",           k:"idę"},
+  {t:"verbs",p:"Jadę...",      r:"YAH-deh",       a:"أسافر / أركب...", at:"usafir / arkab...", e:"I travel / ride...",k:"jadę"},
+  {t:"verbs",p:"Jem...",       r:"yem",           a:"آكل...",           at:"akul...",           e:"I eat...",          k:"jem"},
+  {t:"verbs",p:"Piję...",      r:"PEE-yeh",       a:"أشرب...",          at:"ashrab...",         e:"I drink...",        k:"piję"},
+  {t:"verbs",p:"Lubię...",     r:"LOO-byeh",      a:"أحب...",           at:"uhibb...",          e:"I like...",         k:"lubię"},
+  {t:"verbs",p:"Wiem...",      r:"vyem",          a:"أعرف...",          at:"a'rif...",          e:"I know...",         k:"wiem"},
+  {t:"verbs",p:"Czytam...",    r:"CHIH-tam",      a:"أقرأ...",          at:"aqra'...",          e:"I read...",         k:"czytam"},
+  {t:"verbs",p:"Piszę...",     r:"PEE-sheh",      a:"أكتب...",          at:"aktub...",          e:"I write...",        k:"piszę"},
+  {t:"verbs",p:"Słucham...",   r:"SWOO-kham",     a:"أستمع...",         at:"astami'...",        e:"I listen...",       k:"słucham"},
+  {t:"verbs",p:"Mówię...",     r:"MOO-vyeh",      a:"أتكلم...",         at:"atakallam...",      e:"I speak...",        k:"mówię"},
+  {t:"verbs",p:"Widzę...",     r:"VEE-dzeh",      a:"أرى...",           at:"ara...",            e:"I see...",          k:"widzę"},
+  {t:"verbs",p:"Śpię.",        r:"shpyeh",        a:"أنام.",            at:"anam",              e:"I sleep.",          k:"śpię"},
+  {t:"verbs",p:"Pracuję...",   r:"prah-TSOO-yeh", a:"أعمل...",          at:"a'mal...",          e:"I work...",         k:"pracuję"},
+  {t:"verbs",p:"Mieszkam w...",r:"myesh-KAM v",   a:"أسكن في...",       at:"askun fi...",       e:"I live in...",      k:"mieszkam"},
+  {t:"verbs",p:"Uczę się...",  r:"OO-cheh sheh",  a:"أتعلم...",         at:"ata'allam...",      e:"I learn...",        k:"uczę się"},
+  {t:"verbs",p:"Rozumiem...",  r:"roh-ZOO-myem",  a:"أفهم...",          at:"afham...",          e:"I understand...",   k:"rozumiem"},
+  {t:"verbs",p:"Oglądam...",   r:"oh-GLON-dam",   a:"أشاهد...",         at:"ushahid...",        e:"I watch...",        k:"oglądam"},
+  {t:"verbs",p:"Daję...",      r:"DAH-yeh",       a:"أعطي...",          at:"u'ti...",           e:"I give...",         k:"daję"},
+  {t:"verbs",p:"Biorę...",     r:"BYOH-reh",      a:"آخذ...",           at:"akhudh...",         e:"I take...",         k:"biorę"},
 
   // ── PLACES ─────────────────────────────────────────────────────────────────
-  {t:"places",p:"dom",         r:"dom",              a:"منزل / بيت",          at:"manzil / bayt",          e:"house / home",      k:"dom"},
-  {t:"places",p:"szkoła",      r:"SHKOH-wah",        a:"مدرسة",               at:"madrasa",                e:"school",            k:"szkoła"},
-  {t:"places",p:"sklep",       r:"sklep",            a:"متجر",                at:"matjar",                 e:"shop / store",      k:"sklep"},
-  {t:"places",p:"restauracja", r:"res-tow-RATS-yah", a:"مطعم",                at:"mat'am",                 e:"restaurant",        k:"restauracja"},
-  {t:"places",p:"bank",        r:"bank",             a:"بنك",                 at:"bank",                   e:"bank",              k:"bank"},
-  {t:"places",p:"poczta",      r:"POCH-tah",         a:"مكتب البريد",         at:"maktab al-barid",        e:"post office",       k:"poczta"},
-  {t:"places",p:"park",        r:"park",             a:"حديقة عامة",          at:"hadiqa 'amma",           e:"park",              k:"park"},
-  {t:"places",p:"ulica",       r:"OO-lee-tsah",      a:"شارع",                at:"shari'",                 e:"street",            k:"ulica"},
-  {t:"places",p:"miasto",      r:"MYAS-toh",         a:"مدينة",               at:"madina",                 e:"city",              k:"miasto"},
-  {t:"places",p:"wieś",        r:"vyesh",            a:"قرية",                at:"qarya",                  e:"village",           k:"wieś"},
-  {t:"places",p:"kraj",        r:"kry",              a:"بلد / دولة",          at:"balad / dawla",          e:"country",           k:"kraj"},
-  {t:"places",p:"hotel",       r:"HOH-tel",          a:"فندق",                at:"funduq",                 e:"hotel",             k:"hotel"},
-  {t:"places",p:"lotnisko",    r:"lot-NEES-koh",     a:"مطار",                at:"matar",                  e:"airport",           k:"lotnisko"},
-  {t:"places",p:"dworzec",     r:"DVOR-zets",        a:"محطة القطار",         at:"mahatta al-qitar",       e:"train station",     k:"dworzec"},
-  {t:"places",p:"kościół",     r:"kosh-CHOOL",       a:"كنيسة",               at:"kanisa",                 e:"church",            k:"kościół"},
-  {t:"places",p:"meczet",      r:"ME-chet",          a:"مسجد",                at:"masjid",                 e:"mosque",            k:"meczet"},
-  {t:"places",p:"rynek",       r:"RIH-nek",          a:"سوق / ساحة المدينة",  at:"suq / sahat al-madina",  e:"market square",     k:"rynek"},
-  {t:"places",p:"centrum",     r:"TSEN-troom",       a:"وسط المدينة",         at:"wust al-madina",         e:"city center",       k:"centrum"},
-  {t:"places",p:"szpital",     r:"SHPEE-tal",        a:"مستشفى",              at:"mustashfa",              e:"hospital",          k:"szpital"},
-  {t:"places",p:"apteka",      r:"ap-TEH-kah",       a:"صيدلية",              at:"saydaliyya",             e:"pharmacy",          k:"apteka"},
-  {t:"places",p:"biblioteka",  r:"bee-blyoh-TEH-kah",a:"مكتبة",               at:"maktaba",                e:"library",           k:"biblioteka"},
-  {t:"places",p:"kino",        r:"KEE-noh",          a:"سينما",               at:"sinima",                 e:"cinema",            k:"kino"},
+  {t:"places",p:"dom",          r:"dom",              a:"منزل / بيت",         at:"manzil / bayt",         e:"house / home",      k:"dom"},
+  {t:"places",p:"szkoła",       r:"SHKOH-wah",        a:"مدرسة",              at:"madrasa",               e:"school",            k:"szkoła"},
+  {t:"places",p:"sklep",        r:"sklep",            a:"متجر",               at:"matjar",                e:"shop / store",      k:"sklep"},
+  {t:"places",p:"restauracja",  r:"res-tow-RATS-yah", a:"مطعم",               at:"mat'am",                e:"restaurant",        k:"restauracja"},
+  {t:"places",p:"bank",         r:"bank",             a:"بنك",                at:"bank",                  e:"bank",              k:"bank"},
+  {t:"places",p:"poczta",       r:"POCH-tah",         a:"مكتب البريد",        at:"maktab al-barid",       e:"post office",       k:"poczta"},
+  {t:"places",p:"park",         r:"park",             a:"حديقة عامة",         at:"hadiqa 'amma",          e:"park",              k:"park"},
+  {t:"places",p:"ulica",        r:"OO-lee-tsah",      a:"شارع",               at:"shari'",                e:"street",            k:"ulica"},
+  {t:"places",p:"miasto",       r:"MYAS-toh",         a:"مدينة",              at:"madina",                e:"city",              k:"miasto"},
+  {t:"places",p:"wieś",         r:"vyesh",            a:"قرية",               at:"qarya",                 e:"village",           k:"wieś"},
+  {t:"places",p:"kraj",         r:"kry",              a:"بلد / دولة",         at:"balad / dawla",         e:"country",           k:"kraj"},
+  {t:"places",p:"hotel",        r:"HOH-tel",          a:"فندق",               at:"funduq",                e:"hotel",             k:"hotel"},
+  {t:"places",p:"lotnisko",     r:"lot-NEES-koh",     a:"مطار",               at:"matar",                 e:"airport",           k:"lotnisko"},
+  {t:"places",p:"dworzec",      r:"DVOR-zets",        a:"محطة القطار",        at:"mahatta al-qitar",      e:"train station",     k:"dworzec"},
+  {t:"places",p:"kościół",      r:"kosh-CHOOL",       a:"كنيسة",              at:"kanisa",                e:"church",            k:"kościół"},
+  {t:"places",p:"meczet",       r:"ME-chet",          a:"مسجد",               at:"masjid",                e:"mosque",            k:"meczet"},
+  {t:"places",p:"rynek",        r:"RIH-nek",          a:"سوق / ساحة المدينة", at:"suq / sahat al-madina", e:"market square",     k:"rynek"},
+  {t:"places",p:"centrum",      r:"TSEN-troom",       a:"وسط المدينة",        at:"wust al-madina",        e:"city center",       k:"centrum"},
+  {t:"places",p:"szpital",      r:"SHPEE-tal",        a:"مستشفى",             at:"mustashfa",             e:"hospital",          k:"szpital"},
+  {t:"places",p:"apteka",       r:"ap-TEH-kah",       a:"صيدلية",             at:"saydaliyya",            e:"pharmacy",          k:"apteka"},
+  {t:"places",p:"biblioteka",   r:"bee-blyoh-TEH-kah",a:"مكتبة",              at:"maktaba",               e:"library",           k:"biblioteka"},
+  {t:"places",p:"kino",         r:"KEE-noh",          a:"سينما",              at:"sinima",                e:"cinema",            k:"kino"},
 
   // ── BODY ───────────────────────────────────────────────────────────────────
-  {t:"body",p:"głowa",  r:"GWOH-vah",  a:"رأس",       at:"ra's",         e:"head",           k:"głowa"},
-  {t:"body",p:"ręka",   r:"REN-kah",   a:"يد / ذراع", at:"yad / dhira'", e:"hand / arm",     k:"ręka"},
-  {t:"body",p:"noga",   r:"NOH-gah",   a:"ساق / قدم", at:"saq / qadam",  e:"leg / foot",     k:"noga"},
-  {t:"body",p:"oko",    r:"OH-koh",    a:"عين",        at:"'ayn",         e:"eye",            k:"oko"},
-  {t:"body",p:"ucho",   r:"OO-khoh",   a:"أذن",        at:"udhun",        e:"ear",            k:"ucho"},
-  {t:"body",p:"nos",    r:"nos",       a:"أنف",        at:"anf",          e:"nose",           k:"nos"},
-  {t:"body",p:"usta",   r:"OOS-tah",   a:"فم",         at:"famm",         e:"mouth",          k:"usta"},
-  {t:"body",p:"plecy",  r:"PLE-tsih",  a:"ظهر",        at:"zahr",         e:"back",           k:"plecy"},
-  {t:"body",p:"brzuch", r:"bjooh",     a:"بطن",        at:"batn",         e:"stomach / belly",k:"brzuch"},
-  {t:"body",p:"serce",  r:"SER-tse",   a:"قلب",        at:"qalb",         e:"heart",          k:"serce"},
-  {t:"body",p:"twarz",  r:"tvarsh",    a:"وجه",        at:"wajh",         e:"face",           k:"twarz"},
-  {t:"body",p:"palec",  r:"PAH-lets",  a:"إصبع",       at:"isba'",        e:"finger",         k:"palec"},
-  {t:"body",p:"ząb",    r:"zomp",      a:"سن / ضرس",   at:"sinn / dars",  e:"tooth",          k:"ząb"},
-  {t:"body",p:"włosy",  r:"VWOH-sih",  a:"شعر",        at:"sha'r",        e:"hair",           k:"włosy"},
-]; }})(); /* eslint-enable */
-
-/* =====================================================================
-   SEED LOGIC
-   ===================================================================== */
-let dbInstance = null;
-
-function getConfig() {
-  const apiKey             = document.getElementById("apiKey").value.trim();
-  const projectId          = document.getElementById("projectId").value.trim();
-  const appId              = document.getElementById("appId").value.trim();
-  const messagingSenderId  = document.getElementById("messagingSenderId").value.trim();
-
-  if (!apiKey || !projectId || !appId) {
-    log("❌ Fill in API Key, Project ID and App ID.", "err");
-    return null;
-  }
-
-  return {
-    apiKey,
-    authDomain:        `${projectId}.firebaseapp.com`,
-    projectId,
-    storageBucket:     `${projectId}.firebasestorage.app`,
-    messagingSenderId: messagingSenderId || "0",
-    appId,
-  };
-}
-
-function getOrInitDB() {
-  const cfg = getConfig();
-  if (!cfg) { log("❌ Fill in API Key, Project ID and App ID first.", "err"); return null; }
-  if (!dbInstance) {
-    try {
-      const apps = firebase.apps;
-      if (apps.length) firebase.app().delete().catch(()=>{});
-      firebase.initializeApp(cfg, "seeder-" + Date.now());
-      dbInstance = firebase.firestore(firebase.app(firebase.apps[firebase.apps.length - 1].name));
-    } catch(e) {
-      log("❌ Firebase init error: " + e.message, "err");
-      return null;
-    }
-  }
-  return dbInstance;
-}
-
-function log(msg, cls="info") {
-  const el = document.getElementById("log");
-  el.innerHTML += `<div class="${cls}">${msg}</div>`;
-  el.scrollTop = el.scrollHeight;
-}
-
-function setProgress(pct) {
-  document.getElementById("progressBar").style.width = pct + "%";
-}
-
-async function startSeed() {
-  const db = getOrInitDB();
-  if (!db) return;
-
-  const dataset = document.getElementById("datasetSelect").value;
-  document.getElementById("seedBtn").disabled  = true;
-  document.getElementById("clearBtn").disabled = true;
-  document.getElementById("progressWrap").style.display = "block";
-  document.getElementById("summary").style.display = "none";
-  document.getElementById("log").innerHTML = "";
-  setProgress(0);
-
-  try {
-    log("Connecting to Firestore...", "info");
-    setProgress(5);
-    if (dataset === "vocabulary") {
-      await seedVocabulary(db);
-    } else if (dataset === "grammar_nouns") {
-      await seedGrammarNouns(db);
-    }
-  } catch (err) {
-    log("❌ Error: " + err.message, "err");
-    if (err.message.includes("PERMISSION_DENIED") || err.message.includes("permission")) {
-      log("→ Set Firestore rules to allow writes first (see yellow box above).", "warn");
-    }
-    const sum = document.getElementById("summary");
-    sum.style.display = "block";
-    sum.className = "summary failure";
-    sum.textContent = "Upload failed: " + err.message;
-  } finally {
-    document.getElementById("seedBtn").disabled  = false;
-    document.getElementById("clearBtn").disabled = false;
-  }
-}
-
-async function seedVocabulary(db) {
-  const BATCH_LIMIT = 490;
-  log(`Uploading ${VOCAB_THEMES.length} themes...`, "info");
-  const tBatch = db.batch();
-  VOCAB_THEMES.forEach(theme => tBatch.set(db.collection("themes").doc(theme.id), theme));
-  await tBatch.commit();
-  log("✓ Themes uploaded.", "ok");
-  setProgress(20);
-
-  log(`Uploading ${VOCAB_WORDS.length} vocabulary items...`, "info");
-  let done = 0;
-  while (done < VOCAB_WORDS.length) {
-    const slice = VOCAB_WORDS.slice(done, done + BATCH_LIMIT);
-    const vBatch = db.batch();
-    slice.forEach(item => vBatch.set(db.collection("vocabulary").doc(), item));
-    await vBatch.commit();
-    done += slice.length;
-    setProgress(20 + Math.round((done / VOCAB_WORDS.length) * 78));
-    log(`  ✓ ${done} / ${VOCAB_WORDS.length} items`, "ok");
-  }
-  setProgress(100);
-  log(`\n🎉 Done! ${VOCAB_WORDS.length} words + ${VOCAB_THEMES.length} themes uploaded.`, "ok");
-  const sum = document.getElementById("summary");
-  sum.style.display = "block";
-  sum.className = "summary success";
-  sum.innerHTML = `✅ Seeded successfully!<br>${VOCAB_WORDS.length} vocab items &amp; ${VOCAB_THEMES.length} themes.<br><br>Open <strong>index.html</strong> to use the flashcards.<br><br><strong>Remember to lock Firestore rules back:</strong><br><code style="font-size:11px">allow write: if false;</code>`;
-}
-
-async function seedGrammarNouns(db) {
-  const BATCH_LIMIT = 490;
-  log(`Uploading ${GRAMMAR_NOUNS.length} grammar nouns...`, "info");
-  let done = 0;
-  while (done < GRAMMAR_NOUNS.length) {
-    const slice = GRAMMAR_NOUNS.slice(done, done + BATCH_LIMIT);
-    const batch = db.batch();
-    slice.forEach(item => batch.set(db.collection("grammar_nouns").doc(), item));
-    await batch.commit();
-    done += slice.length;
-    setProgress(20 + Math.round((done / GRAMMAR_NOUNS.length) * 78));
-    log(`  ✓ ${done} / ${GRAMMAR_NOUNS.length} nouns`, "ok");
-  }
-  setProgress(100);
-  log(`\n🎉 Done! ${GRAMMAR_NOUNS.length} grammar nouns uploaded to 'grammar_nouns'.`, "ok");
-  const sum = document.getElementById("summary");
-  sum.style.display = "block";
-  sum.className = "summary success";
-  sum.innerHTML = `✅ Seeded successfully!<br>${GRAMMAR_NOUNS.length} grammar nouns uploaded.<br><br>Open <strong>grammar-mianownik.html</strong> or <strong>grammar-biernik.html</strong>.<br><br><strong>Remember to lock Firestore rules back:</strong><br><code style="font-size:11px">allow write: if false;</code>`;
-}
-
-async function startClear() {
-  const dataset = document.getElementById("datasetSelect").value;
-  const collections = dataset === "vocabulary" ? ["vocabulary","themes"] : ["grammar_nouns"];
-  if (!confirm(`This will DELETE all documents in: ${collections.map(c=>'/'+c).join(', ')}. Continue?`)) return;
-  const db = getOrInitDB();
-  if (!db) return;
-
-  document.getElementById("seedBtn").disabled  = true;
-  document.getElementById("clearBtn").disabled = true;
-  document.getElementById("progressWrap").style.display = "block";
-  document.getElementById("log").innerHTML = "";
-  document.getElementById("summary").style.display = "none";
-  setProgress(10);
-
-  async function deleteCollection(colName) {
-    log(`Clearing /${colName}...`, "info");
-    const snap = await db.collection(colName).get();
-    if (snap.empty) { log(`  /${colName} is already empty.`, "warn"); return; }
-    const BATCH_LIMIT = 490;
-    let deleted = 0;
-    while (deleted < snap.docs.length) {
-      const batch = db.batch();
-      snap.docs.slice(deleted, deleted + BATCH_LIMIT).forEach(d => batch.delete(d.ref));
-      await batch.commit();
-      deleted += Math.min(BATCH_LIMIT, snap.docs.length - deleted + BATCH_LIMIT);
-    }
-    log(`✓ /${colName} cleared (${snap.docs.length} docs).`, "ok");
-  }
-
-  try {
-    const step = Math.floor(80 / collections.length);
-    for (let i = 0; i < collections.length; i++) {
-      await deleteCollection(collections[i]);
-      setProgress(20 + (i + 1) * step);
-    }
-    setProgress(100);
-    log("✓ Done.", "ok");
-    const sum = document.getElementById("summary");
-    sum.style.display = "block";
-    sum.className = "summary success";
-    sum.textContent = "Firestore cleared. You can now upload fresh data.";
-  } catch (err) {
-    log("❌ Error: " + err.message, "err");
-  } finally {
-    document.getElementById("seedBtn").disabled  = false;
-    document.getElementById("clearBtn").disabled = false;
-  }
-}
-</script>
-</body>
-</html>
+  {t:"body",p:"głowa",  r:"GWOH-vah",  a:"رأس",        at:"ra's",         e:"head",            k:"głowa"},
+  {t:"body",p:"ręka",   r:"REN-kah",   a:"يد / ذراع",  at:"yad / dhira'", e:"hand / arm",      k:"ręka"},
+  {t:"body",p:"noga",   r:"NOH-gah",   a:"ساق / قدم",  at:"saq / qadam",  e:"leg / foot",      k:"noga"},
+  {t:"body",p:"oko",    r:"OH-koh",    a:"عين",         at:"'ayn",         e:"eye",             k:"oko"},
+  {t:"body",p:"ucho",   r:"OO-khoh",   a:"أذن",         at:"udhun",        e:"ear",             k:"ucho"},
+  {t:"body",p:"nos",    r:"nos",       a:"أنف",         at:"anf",          e:"nose",            k:"nos"},
+  {t:"body",p:"usta",   r:"OOS-tah",   a:"فم",          at:"famm",         e:"mouth",           k:"usta"},
+  {t:"body",p:"plecy",  r:"PLE-tsih",  a:"ظهر",         at:"zahr",         e:"back",            k:"plecy"},
+  {t:"body",p:"brzuch", r:"bjooh",     a:"بطن",         at:"batn",         e:"stomach / belly", k:"brzuch"},
+  {t:"body",p:"serce",  r:"SER-tse",   a:"قلب",         at:"qalb",         e:"heart",           k:"serce"},
+  {t:"body",p:"twarz",  r:"tvarsh",    a:"وجه",         at:"wajh",         e:"face",            k:"twarz"},
+  {t:"body",p:"palec",  r:"PAH-lets",  a:"إصبع",        at:"isba'",        e:"finger",          k:"palec"},
+  {t:"body",p:"ząb",    r:"zomp",      a:"سن / ضرس",    at:"sinn / dars",  e:"tooth",           k:"ząb"},
+  {t:"body",p:"włosy",  r:"VWOH-sih",  a:"شعر",         at:"sha'r",        e:"hair",            k:"włosy"},
+];

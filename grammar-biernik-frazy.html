@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Biernik Phrases — Polish Grammar</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { background:#0d0d0d; color:#ccc; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; margin:0; padding:0; }
+
+    /* ── top bar ── */
+    .gtop { position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:8px;
+            padding:10px 14px; background:#0d0d0d; border-bottom:.5px solid #2a2a2a; }
+    .gtop a { font-size:12px; color:#555; text-decoration:none; padding:5px 11px; border-radius:10px;
+              border:.5px solid #2a2a2a; background:#161616; white-space:nowrap; }
+    .gtop a:hover { color:#aaa; }
+    .gtop-title { font-size:14px; font-weight:600; color:#ccc; flex:1; text-align:center; }
+
+    /* ── rules cheatsheet ── */
+    .cheat { max-width:540px; margin:10px auto 0; padding:0 14px; }
+    .cheat-toggle { width:100%; background:#161616; border:.5px solid #2a2a2a; border-radius:10px;
+                    color:#666; font-size:12px; padding:8px 14px; cursor:pointer; text-align:left;
+                    display:flex; justify-content:space-between; align-items:center; }
+    .cheat-toggle:hover { color:#aaa; }
+    .cheat-body { display:none; background:#0f0f0f; border:.5px solid #1e1e1e; border-top:none;
+                  border-radius:0 0 10px 10px; padding:10px 14px; font-size:11px; line-height:1.9; color:#666; }
+    .cheat-body.open { display:block; }
+    .cheat-body table { width:100%; border-collapse:collapse; }
+    .cheat-body td { padding:2px 8px; }
+    .cheat-body td:first-child { color:#888; font-weight:500; min-width:110px; }
+    .cheat-body .rule-adj { color:#6aaccc; }
+    .cheat-body .rule-noun { color:#ccac6a; }
+
+    /* ── score bar ── */
+    .gscore { display:flex; justify-content:space-between; padding:8px 16px 4px; font-size:12px; color:#555; }
+
+    /* ── filter tabs ── */
+    .gfilter { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; padding:10px 14px 4px; }
+    .gtab { padding:6px 13px; border-radius:18px; border:.5px solid #333; background:transparent;
+            color:#666; font-size:12px; cursor:pointer; transition:all .15s; }
+    .gtab small { opacity:.45; font-size:10px; margin-left:3px; }
+    .gtab:hover { color:#aaa; }
+
+    /* ── card ── */
+    .gcard { max-width:540px; margin:12px auto 0; padding:0 14px; }
+    .gbadge { display:inline-block; font-size:10px; text-transform:uppercase; letter-spacing:.1em;
+              padding:3px 11px; border-radius:10px; border:.5px solid; margin-bottom:8px; font-weight:600; }
+    .gar  { font-size:20px; font-weight:600; color:#ddd; text-align:center; margin:4px 0; }
+    .gat  { font-size:12px; color:#666; text-align:center; margin-bottom:2px; font-style:italic; }
+    .gen  { font-size:13px; color:#888; text-align:center; margin-bottom:10px; }
+
+    /* nominative sentence display */
+    .gnom-sentence { text-align:center; margin-bottom:14px; }
+    .gnom-label { font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:#444; margin-bottom:4px; }
+    .gnom-text { font-size:18px; color:#aaa; letter-spacing:.02em; }
+    .gnom-adj  { color:#6aaccc; }   /* blue — adjective */
+    .gnom-noun { color:#ccac6a; }   /* gold — noun */
+
+    /* ── input ── */
+    .ginput-row { max-width:540px; margin:0 auto; padding:0 14px; display:flex; gap:8px; }
+    .ginput { flex:1; background:#161616; border:.5px solid #2a2a2a; border-radius:12px;
+              padding:12px 14px; color:#ccc; font-size:15px; outline:none; }
+    .ginput:focus { border-color:#444; }
+    .ginput.g-ok  { border-color:#4a7c59; background:#1a2a1f; color:#8fcca0; }
+    .ginput.g-err { border-color:#7c4a4a; background:#2a1a1a; color:#cc8080; }
+    .gcheck { padding:11px 18px; border-radius:12px; border:.5px solid #333; background:#1a1a1a;
+              color:#aaa; font-size:14px; cursor:pointer; white-space:nowrap; transition:all .15s; }
+    .gcheck:hover { background:#222; color:#ddd; }
+
+    /* ── result ── */
+    .gresult { max-width:540px; margin:12px auto 0; padding:0 14px; }
+    .gresult-box { padding:12px 14px; border-radius:12px; font-size:13px; line-height:1.7; text-align:center; }
+    .gresult-box.ok  { background:#4a7c5918; border:.5px solid #4a7c5940; }
+    .gresult-box.err { background:#7c4a4a18; border:.5px solid #7c4a4a40; }
+    .verdict  { font-size:15px; font-weight:600; margin-bottom:4px; }
+    .answer   { color:#aaa; margin-bottom:6px; }
+    .answer strong { color:#ddd; }
+    .full-sent { font-size:14px; margin:6px 0; }
+    .full-sent .adj { color:#6aaccc; }
+    .full-sent .noun { color:#ccac6a; }
+    .grule { font-size:11px; color:#666; font-style:italic; margin-top:6px; padding:6px 10px;
+             background:#1a1a1a; border-radius:8px; text-align:left; line-height:1.55; }
+    .no-change-note { font-size:11px; color:#6acc7a; margin-top:4px; }
+
+    /* ── options ── */
+    .gopts { max-width:540px; margin:16px auto; padding:0 16px; }
+    .gopts label { display:flex; align-items:center; gap:8px; font-size:12px; color:#555; cursor:pointer; }
+    .gopts input[type=checkbox] { accent-color:#666; }
+
+    /* ── input hint ── */
+    .ginput-hint { max-width:540px; margin:4px auto 0; padding:0 16px;
+                   font-size:11px; color:#444; font-style:italic; }
+  </style>
+
+  <!-- No Firebase needed — data loaded directly from JS file -->
+  <script src="data/grammar-adjphrases-data.js"></script>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="gtop">
+  <a href="grammar-mianownik-frazy.html">← Mianownik phrases</a>
+  <span class="gtop-title">Biernik — Adj + Noun</span>
+  <a href="index.html">Home →</a>
+</div>
+
+<!-- RULES CHEATSHEET (collapsible) -->
+<div class="cheat">
+  <button class="cheat-toggle" onclick="toggleCheat(this)">
+    <span>📋 Rules cheatsheet</span>
+    <span id="cheatArrow">▸</span>
+  </button>
+  <div class="cheat-body" id="cheatBody">
+    <table>
+      <tr>
+        <td>M.Anim (consonant)</td>
+        <td><span class="rule-adj">adj: -y → -ego</span> &nbsp; <span class="rule-noun">noun: +a</span></td>
+        <td style="color:#555">dobry brat → dobrego brata</td>
+      </tr>
+      <tr>
+        <td>M.Anim (-a noun)</td>
+        <td><span class="rule-adj">adj: -y → -ego</span> &nbsp; <span class="rule-noun">noun: -a → -ę</span></td>
+        <td style="color:#555">dobry kolega → dobrego kolegę</td>
+      </tr>
+      <tr>
+        <td>M.Inan</td>
+        <td><span style="color:#4a7c59">NO CHANGE</span></td>
+        <td style="color:#555">nowy telefon → nowy telefon</td>
+      </tr>
+      <tr>
+        <td>Fem. (-a noun)</td>
+        <td><span class="rule-adj">adj: -a → -ą</span> &nbsp; <span class="rule-noun">noun: -a → -ę</span></td>
+        <td style="color:#555">dobra córka → dobrą córkę</td>
+      </tr>
+      <tr>
+        <td>Fem. (consonant)</td>
+        <td><span class="rule-adj">adj: -a → -ą</span> &nbsp; <span style="color:#4a7c59">noun: no change</span></td>
+        <td style="color:#555">długa noc → długą noc</td>
+      </tr>
+      <tr>
+        <td>Neuter</td>
+        <td><span style="color:#4a7c59">NO CHANGE</span></td>
+        <td style="color:#555">nowe okno → nowe okno</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- SCORE + FILTER -->
+<div class="gscore">
+  <span id="progress">1 / 0</span>
+  <span id="score">Score: 0 / 0</span>
+</div>
+<div class="gfilter">
+  <button class="gtab active" id="tab-all"    onclick="selectFilter('all')">All <small id="cnt-all">0</small></button>
+  <button class="gtab"        id="tab-m_anim" onclick="selectFilter('m_anim')">M.Anim <small id="cnt-m_anim">0</small></button>
+  <button class="gtab"        id="tab-m_inan" onclick="selectFilter('m_inan')">M.Inan <small id="cnt-m_inan">0</small></button>
+  <button class="gtab"        id="tab-f"      onclick="selectFilter('f')">Fem. <small id="cnt-f">0</small></button>
+  <button class="gtab"        id="tab-n"      onclick="selectFilter('n')">Neut. <small id="cnt-n">0</small></button>
+</div>
+
+<!-- QUESTION CARD -->
+<div class="gcard">
+  <div style="text-align:center"><span class="gbadge" id="badge">—</span></div>
+  <div class="gar" id="qar"></div>
+  <div class="gat" id="qat"></div>
+  <div class="gen" id="qen"></div>
+
+  <div class="gnom-sentence">
+    <div class="gnom-label">Mianownik (nominative)</div>
+    <div class="gnom-text">To jest <span class="gnom-adj" id="qnomAdj"></span> <span class="gnom-noun" id="qnomNoun"></span>.</div>
+  </div>
+</div>
+
+<!-- INPUT -->
+<div class="ginput-row">
+  <input id="ginput" class="ginput" type="text" autocomplete="off" autocorrect="off"
+         spellcheck="false" placeholder="Type accusative phrase (adjective + noun)…"
+         onkeydown="onKey(event)">
+  <button class="gcheck" id="gcheck" onclick="checkAnswer()">Check</button>
+</div>
+<div class="ginput-hint">e.g. <span id="hintVerb">Mam</span> ___</div>
+
+<!-- RESULT -->
+<div class="gresult" id="gresult" style="display:none">
+  <div class="gresult-box" id="gresult-box">
+    <div class="verdict"   id="rVerdict"></div>
+    <div class="answer"    id="rAnswer"></div>
+    <div class="full-sent" id="rFullSent"></div>
+    <div class="no-change-note" id="rNoChange" style="display:none"></div>
+    <div class="grule"     id="rRule"></div>
+  </div>
+</div>
+
+<!-- OPTIONS -->
+<div class="gopts">
+  <label>
+    <input type="checkbox" id="ignoreDia" checked>
+    Ignore diacritics (ą→a, ę→e, ó→o…)
+  </label>
+</div>
+
+<script>
+const GENDER = {
+  m_anim: { label:"Masculine Animate",   color:"#4a9acc", bg:"#1a2a3a", border:"#2a4a5a" },
+  m_inan: { label:"Masculine Inanimate", color:"#6acc7a", bg:"#1a2a1a", border:"#2a4a2a" },
+  f:      { label:"Feminine",            color:"#cc6aac", bg:"#2a1a2a", border:"#4a2a4a" },
+  n:      { label:"Neuter",              color:"#ccac6a", bg:"#2a2a1a", border:"#4a4a2a" },
+};
+
+let deck = [], cur = 0, correct = 0, total = 0, checked = false;
+
+/* ── init ── */
+(function init() {
+  buildCounts();
+  buildDeck("all");
+  render();
+})();
+
+function buildCounts() {
+  const all = GRAMMAR_ADJ_PHRASES;
+  document.getElementById("cnt-all").textContent    = all.length;
+  document.getElementById("cnt-m_anim").textContent = all.filter(p => p.g === "m_anim").length;
+  document.getElementById("cnt-m_inan").textContent = all.filter(p => p.g === "m_inan").length;
+  document.getElementById("cnt-f").textContent      = all.filter(p => p.g === "f").length;
+  document.getElementById("cnt-n").textContent      = all.filter(p => p.g === "n").length;
+}
+
+function buildDeck(f) {
+  deck = f === "all" ? [...GRAMMAR_ADJ_PHRASES] : GRAMMAR_ADJ_PHRASES.filter(p => p.g === f);
+  shuffle(deck);
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+/* ── filter ── */
+function selectFilter(f) {
+  document.querySelectorAll(".gtab").forEach(t => {
+    t.classList.remove("active");
+    t.style.color = t.style.borderColor = t.style.background = "";
+  });
+  const el = document.getElementById("tab-" + f);
+  el.classList.add("active");
+  if (f !== "all" && GENDER[f]) {
+    el.style.color       = GENDER[f].color;
+    el.style.borderColor = GENDER[f].color + "66";
+    el.style.background  = GENDER[f].bg;
+  } else {
+    el.style.color = "#ccc"; el.style.borderColor = "#555"; el.style.background = "#1a1a1a";
+  }
+  buildDeck(f);
+  cur = 0; correct = 0; total = 0; checked = false;
+  document.getElementById("gresult").style.display = "none";
+  updateScore();
+  render();
+  setTimeout(() => document.getElementById("ginput").focus(), 60);
+}
+
+/* ── render ── */
+function render() {
+  if (!deck.length) return;
+  const p = deck[cur % deck.length];
+  const gi = GENDER[p.g] || { label:p.g, color:"#888", bg:"#1a1a1a", border:"#333" };
+
+  const badge = document.getElementById("badge");
+  badge.textContent = gi.label;
+  badge.style.color = gi.color; badge.style.background = gi.bg; badge.style.borderColor = gi.border;
+
+  document.getElementById("qar").textContent      = p.ar  || "";
+  document.getElementById("qat").textContent      = p.at  || "";
+  document.getElementById("qen").textContent      = p.en  || "";
+  document.getElementById("qnomAdj").textContent  = p.nom_adj;
+  document.getElementById("qnomNoun").textContent = p.nom_noun;
+  document.getElementById("hintVerb").textContent = p.verb;
+
+  const inp = document.getElementById("ginput");
+  inp.value = "";
+  inp.className = "ginput";
+  document.getElementById("gresult").style.display  = "none";
+  document.getElementById("gcheck").textContent      = "Check";
+  document.getElementById("progress").textContent    = (cur % deck.length + 1) + " / " + deck.length;
+  checked = false;
+}
+
+/* ── check ── */
+function checkAnswer() {
+  if (checked) { nextQ(); return; }
+  const p   = deck[cur % deck.length];
+  const inp = document.getElementById("ginput");
+  const raw = inp.value.trim();
+  if (!raw) { inp.focus(); return; }
+
+  const ignDia = document.getElementById("ignoreDia").checked;
+  const norm = s => {
+    let r = s.toLowerCase().replace(/[.,!?]/g,"").trim();
+    if (ignDia) r = r.replace(/ą/g,"a").replace(/ć/g,"c").replace(/ę/g,"e")
+                     .replace(/ł/g,"l").replace(/ń/g,"n").replace(/ó/g,"o")
+                     .replace(/ś/g,"s").replace(/ź/g,"z").replace(/ż/g,"z");
+    return r.replace(/\s+/g," ");
+  };
+
+  const expected = p.acc_adj + " " + p.acc_noun;
+  const ok = norm(raw) === norm(expected);
+  total++;
+  if (ok) correct++;
+  checked = true;
+
+  inp.classList.add(ok ? "g-ok" : "g-err");
+
+  const isNoChange = (p.nom_adj === p.acc_adj && p.nom_noun === p.acc_noun);
+  const box = document.getElementById("gresult-box");
+  box.className = "gresult-box " + (ok ? "ok" : "err");
+  document.getElementById("rVerdict").textContent = ok ? "✅ Correct!" : "❌ Not quite…";
+
+  const ansEl = document.getElementById("rAnswer");
+  if (ok) {
+    ansEl.innerHTML = `<strong>${p.acc_adj} ${p.acc_noun}</strong>`;
+  } else {
+    ansEl.innerHTML = `Correct answer: <strong>${p.acc_adj} ${p.acc_noun}</strong>`;
+  }
+
+  // Full sentence with colour-coded adj/noun
+  document.getElementById("rFullSent").innerHTML =
+    `${p.verb} <span class="adj">${p.acc_adj}</span> <span class="noun">${p.acc_noun}</span>.`;
+
+  const ncEl = document.getElementById("rNoChange");
+  if (isNoChange) {
+    ncEl.style.display = "block";
+    ncEl.textContent = "✓ This gender has NO CHANGE in accusative — the phrase is identical to nominative!";
+  } else {
+    ncEl.style.display = "none";
+  }
+
+  document.getElementById("rRule").textContent = p.r_acc || "";
+  document.getElementById("gresult").style.display = "block";
+  document.getElementById("gcheck").textContent = "Next →";
+  updateScore();
+}
+
+function nextQ() {
+  cur = (cur + 1) % deck.length;
+  checked = false;
+  render();
+  setTimeout(() => document.getElementById("ginput").focus(), 60);
+}
+
+function updateScore() {
+  document.getElementById("score").textContent = "Score: " + correct + " / " + total;
+}
+
+function onKey(e) {
+  if (e.key === "Enter") { e.preventDefault(); checkAnswer(); }
+}
+
+function toggleCheat(btn) {
+  const body  = document.getElementById("cheatBody");
+  const arrow = document.getElementById("cheatArrow");
+  body.classList.toggle("open");
+  arrow.textContent = body.classList.contains("open") ? "▾" : "▸";
+}
+</script>
+</body>
+</html>

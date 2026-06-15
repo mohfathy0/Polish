@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Mianownik Phrases — Polish Grammar</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { background:#0d0d0d; color:#ccc; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; margin:0; padding:0; }
+
+    /* ── top bar ── */
+    .gtop { position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:8px;
+            padding:10px 14px; background:#0d0d0d; border-bottom:.5px solid #2a2a2a; }
+    .gtop a { font-size:12px; color:#555; text-decoration:none; padding:5px 11px; border-radius:10px;
+              border:.5px solid #2a2a2a; background:#161616; white-space:nowrap; }
+    .gtop a:hover { color:#aaa; }
+    .gtop-title { font-size:14px; font-weight:600; color:#ccc; flex:1; text-align:center; }
+
+    /* ── rules cheatsheet ── */
+    .cheat { max-width:540px; margin:10px auto 0; padding:0 14px; }
+    .cheat-toggle { width:100%; background:#161616; border:.5px solid #2a2a2a; border-radius:10px;
+                    color:#666; font-size:12px; padding:8px 14px; cursor:pointer; text-align:left;
+                    display:flex; justify-content:space-between; align-items:center; }
+    .cheat-toggle:hover { color:#aaa; }
+    .cheat-body { display:none; background:#0f0f0f; border:.5px solid #1e1e1e; border-top:none;
+                  border-radius:0 0 10px 10px; padding:10px 14px; font-size:11px; line-height:1.9; color:#666; }
+    .cheat-body.open { display:block; }
+    .cheat-body table { width:100%; border-collapse:collapse; }
+    .cheat-body td { padding:2px 8px; }
+    .cheat-body td:first-child { color:#888; font-weight:500; min-width:110px; }
+    .cheat-body .rule-adj  { color:#6aaccc; }
+    .cheat-body .rule-noun { color:#ccac6a; }
+    .cheat-body .example   { color:#555; font-style:italic; }
+
+    /* ── score bar ── */
+    .gscore { display:flex; justify-content:space-between; padding:8px 16px 4px; font-size:12px; color:#555; }
+
+    /* ── filter tabs ── */
+    .gfilter { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; padding:10px 14px 4px; }
+    .gtab { padding:6px 13px; border-radius:18px; border:.5px solid #333; background:transparent;
+            color:#666; font-size:12px; cursor:pointer; transition:all .15s; }
+    .gtab small { opacity:.45; font-size:10px; margin-left:3px; }
+    .gtab:hover { color:#aaa; }
+
+    /* ── card ── */
+    .gcard { max-width:540px; margin:12px auto 0; padding:0 14px; }
+    .gbadge { display:inline-block; font-size:10px; text-transform:uppercase; letter-spacing:.1em;
+              padding:3px 11px; border-radius:10px; border:.5px solid; margin-bottom:8px; font-weight:600; }
+    .gar  { font-size:20px; font-weight:600; color:#ddd; text-align:center; margin:4px 0; }
+    .gat  { font-size:12px; color:#666; text-align:center; margin-bottom:2px; font-style:italic; }
+    .gen  { font-size:13px; color:#888; text-align:center; margin-bottom:10px; }
+
+    /* frame */
+    .gframe { font-size:18px; color:#aaa; text-align:center; margin:6px 0 14px; }
+    .gblank { color:#444; border-bottom:1px dashed #444; padding:0 14px; }
+
+    /* ── input ── */
+    .ginput-row { max-width:540px; margin:0 auto; padding:0 14px; display:flex; gap:8px; }
+    .ginput { flex:1; background:#161616; border:.5px solid #2a2a2a; border-radius:12px;
+              padding:12px 14px; color:#ccc; font-size:15px; outline:none; }
+    .ginput:focus { border-color:#444; }
+    .ginput.g-ok  { border-color:#4a7c59; background:#1a2a1f; color:#8fcca0; }
+    .ginput.g-err { border-color:#7c4a4a; background:#2a1a1a; color:#cc8080; }
+    .gcheck { padding:11px 18px; border-radius:12px; border:.5px solid #333; background:#1a1a1a;
+              color:#aaa; font-size:14px; cursor:pointer; white-space:nowrap; transition:all .15s; }
+    .gcheck:hover { background:#222; color:#ddd; }
+    .ginput-hint { max-width:540px; margin:4px auto 0; padding:0 16px;
+                   font-size:11px; color:#444; font-style:italic; }
+
+    /* ── result ── */
+    .gresult { max-width:540px; margin:12px auto 0; padding:0 14px; }
+    .gresult-box { padding:12px 14px; border-radius:12px; font-size:13px; line-height:1.7; text-align:center; }
+    .gresult-box.ok  { background:#4a7c5918; border:.5px solid #4a7c5940; }
+    .gresult-box.err { background:#7c4a4a18; border:.5px solid #7c4a4a40; }
+    .verdict  { font-size:15px; font-weight:600; margin-bottom:4px; }
+    .answer   { color:#aaa; margin-bottom:6px; }
+    .answer strong { color:#ddd; }
+    .full-sent { font-size:14px; margin:6px 0; }
+    .full-sent .adj  { color:#6aaccc; }
+    .full-sent .noun { color:#ccac6a; }
+    .grule { font-size:11px; color:#666; font-style:italic; margin-top:6px; padding:6px 10px;
+             background:#1a1a1a; border-radius:8px; text-align:left; line-height:1.55; }
+
+    /* biernik hint (shows accusative form after answering) */
+    .biernik-hint { font-size:11px; color:#555; margin-top:8px; padding:6px 10px;
+                    background:#1a1a1a; border-radius:8px; text-align:left; }
+    .biernik-hint .adj  { color:#6aaccc; }
+    .biernik-hint .noun { color:#ccac6a; }
+
+    /* ── options ── */
+    .gopts { max-width:540px; margin:16px auto; padding:0 16px; }
+    .gopts label { display:flex; align-items:center; gap:8px; font-size:12px; color:#555; cursor:pointer; }
+    .gopts input[type=checkbox] { accent-color:#666; }
+  </style>
+
+  <!-- No Firebase needed — data loaded from JS file -->
+  <script src="data/grammar-adjphrases-data.js"></script>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="gtop">
+  <a href="grammar-mianownik.html">← Mianownik (nouns)</a>
+  <span class="gtop-title">Mianownik — Adj + Noun</span>
+  <a href="grammar-biernik-frazy.html">Biernik phrases →</a>
+</div>
+
+<!-- RULES CHEATSHEET -->
+<div class="cheat">
+  <button class="cheat-toggle" onclick="toggleCheat(this)">
+    <span>📋 Adjective endings in Mianownik</span>
+    <span id="cheatArrow">▸</span>
+  </button>
+  <div class="cheat-body" id="cheatBody">
+    <table>
+      <tr>
+        <td>M (hard stem)</td>
+        <td><span class="rule-adj">adj: -y</span> &nbsp; <span class="rule-noun">noun: consonant</span></td>
+        <td class="example">dobr<strong>y</strong> brat, star<strong>y</strong> dom</td>
+      </tr>
+      <tr>
+        <td>M (velar k / g)</td>
+        <td><span class="rule-adj">adj: -i</span> &nbsp; <span class="rule-noun">noun: consonant</span></td>
+        <td class="example">wysok<strong>i</strong> student, drug<strong>i</strong> kolega</td>
+      </tr>
+      <tr>
+        <td>M (-a noun)</td>
+        <td><span class="rule-adj">adj: -y / -i</span> &nbsp; <span class="rule-noun">noun: -a</span></td>
+        <td class="example">dobr<strong>y</strong> koleg<strong>a</strong></td>
+      </tr>
+      <tr>
+        <td>Feminine</td>
+        <td><span class="rule-adj">adj: -a</span> &nbsp; <span class="rule-noun">noun: -a (mostly)</span></td>
+        <td class="example">dobr<strong>a</strong> córk<strong>a</strong>, dług<strong>a</strong> noc</td>
+      </tr>
+      <tr>
+        <td>Neuter (hard)</td>
+        <td><span class="rule-adj">adj: -e</span> &nbsp; <span class="rule-noun">noun: -o / -e</span></td>
+        <td class="example">dobr<strong>e</strong> dziecko, nowe okno</td>
+      </tr>
+      <tr>
+        <td>Neuter (velar)</td>
+        <td><span class="rule-adj">adj: -ie</span> &nbsp; <span class="rule-noun">noun: -o / -e</span></td>
+        <td class="example">wysok<strong>ie</strong> miasto</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- SCORE + FILTER -->
+<div class="gscore">
+  <span id="progress">1 / 0</span>
+  <span id="score">Score: 0 / 0</span>
+</div>
+<div class="gfilter">
+  <button class="gtab active" id="tab-all"    onclick="selectFilter('all')">All <small id="cnt-all">0</small></button>
+  <button class="gtab"        id="tab-m_anim" onclick="selectFilter('m_anim')">M.Anim <small id="cnt-m_anim">0</small></button>
+  <button class="gtab"        id="tab-m_inan" onclick="selectFilter('m_inan')">M.Inan <small id="cnt-m_inan">0</small></button>
+  <button class="gtab"        id="tab-f"      onclick="selectFilter('f')">Fem. <small id="cnt-f">0</small></button>
+  <button class="gtab"        id="tab-n"      onclick="selectFilter('n')">Neut. <small id="cnt-n">0</small></button>
+</div>
+
+<!-- QUESTION CARD -->
+<div class="gcard">
+  <div style="text-align:center"><span class="gbadge" id="badge">—</span></div>
+  <div class="gar" id="qar"></div>
+  <div class="gat" id="qat"></div>
+  <div class="gen" id="qen"></div>
+  <div class="gframe">To jest <span class="gblank">___</span>.</div>
+</div>
+
+<!-- INPUT -->
+<div class="ginput-row">
+  <input id="ginput" class="ginput" type="text" autocomplete="off" autocorrect="off"
+         spellcheck="false" placeholder="Type adj + noun in nominative…"
+         onkeydown="onKey(event)">
+  <button class="gcheck" id="gcheck" onclick="checkAnswer()">Check</button>
+</div>
+<div class="ginput-hint">e.g. To jest ___</div>
+
+<!-- RESULT -->
+<div class="gresult" id="gresult" style="display:none">
+  <div class="gresult-box" id="gresult-box">
+    <div class="verdict"  id="rVerdict"></div>
+    <div class="answer"   id="rAnswer"></div>
+    <div class="full-sent" id="rFullSent"></div>
+    <div class="grule"    id="rRule"></div>
+    <div class="biernik-hint" id="rBiernikHint"></div>
+  </div>
+</div>
+
+<!-- OPTIONS -->
+<div class="gopts">
+  <label>
+    <input type="checkbox" id="ignoreDia" checked>
+    Ignore diacritics (ą→a, ę→e, ó→o…)
+  </label>
+  <label style="margin-top:8px">
+    <input type="checkbox" id="showBiernik" checked>
+    Show accusative form after answering
+  </label>
+</div>
+
+<script>
+const GENDER = {
+  m_anim: { label:"Masculine Animate",   color:"#4a9acc", bg:"#1a2a3a", border:"#2a4a5a" },
+  m_inan: { label:"Masculine Inanimate", color:"#6acc7a", bg:"#1a2a1a", border:"#2a4a2a" },
+  f:      { label:"Feminine",            color:"#cc6aac", bg:"#2a1a2a", border:"#4a2a4a" },
+  n:      { label:"Neuter",              color:"#ccac6a", bg:"#2a2a1a", border:"#4a4a2a" },
+};
+
+/* nominative rules by gender, used in result feedback */
+const NOM_RULES = {
+  m_anim: p => `M.anim: adjective ends in -y / -i (hard: ${p.nom_adj}); noun is dictionary form (${p.nom_noun}).`,
+  m_inan: p => `M.inan: adjective ends in -y / -i (hard: ${p.nom_adj}); noun is dictionary form (${p.nom_noun}).`,
+  f:      p => `Feminine: adjective ends in -a (${p.nom_adj}); noun usually ends in -a or consonant (${p.nom_noun}).`,
+  n:      p => `Neuter: adjective ends in -e / -ie (${p.nom_adj}); noun ends in -o, -e, or -ę (${p.nom_noun}).`,
+};
+
+let deck = [], cur = 0, correct = 0, total = 0, checked = false;
+
+(function init() {
+  buildCounts();
+  buildDeck("all");
+  render();
+})();
+
+function buildCounts() {
+  const all = GRAMMAR_ADJ_PHRASES;
+  document.getElementById("cnt-all").textContent    = all.length;
+  document.getElementById("cnt-m_anim").textContent = all.filter(p => p.g === "m_anim").length;
+  document.getElementById("cnt-m_inan").textContent = all.filter(p => p.g === "m_inan").length;
+  document.getElementById("cnt-f").textContent      = all.filter(p => p.g === "f").length;
+  document.getElementById("cnt-n").textContent      = all.filter(p => p.g === "n").length;
+}
+
+function buildDeck(f) {
+  deck = f === "all" ? [...GRAMMAR_ADJ_PHRASES] : GRAMMAR_ADJ_PHRASES.filter(p => p.g === f);
+  shuffle(deck);
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+function selectFilter(f) {
+  document.querySelectorAll(".gtab").forEach(t => {
+    t.classList.remove("active");
+    t.style.color = t.style.borderColor = t.style.background = "";
+  });
+  const el = document.getElementById("tab-" + f);
+  el.classList.add("active");
+  if (f !== "all" && GENDER[f]) {
+    el.style.color       = GENDER[f].color;
+    el.style.borderColor = GENDER[f].color + "66";
+    el.style.background  = GENDER[f].bg;
+  } else {
+    el.style.color = "#ccc"; el.style.borderColor = "#555"; el.style.background = "#1a1a1a";
+  }
+  buildDeck(f);
+  cur = 0; correct = 0; total = 0; checked = false;
+  document.getElementById("gresult").style.display = "none";
+  updateScore();
+  render();
+  setTimeout(() => document.getElementById("ginput").focus(), 60);
+}
+
+function render() {
+  if (!deck.length) return;
+  const p  = deck[cur % deck.length];
+  const gi = GENDER[p.g] || { label:p.g, color:"#888", bg:"#1a1a1a", border:"#333" };
+
+  const badge = document.getElementById("badge");
+  badge.textContent = gi.label;
+  badge.style.color = gi.color; badge.style.background = gi.bg; badge.style.borderColor = gi.border;
+
+  document.getElementById("qar").textContent = p.ar || "";
+  document.getElementById("qat").textContent = p.at || "";
+  document.getElementById("qen").textContent = p.en || "";
+
+  const inp = document.getElementById("ginput");
+  inp.value = "";
+  inp.className = "ginput";
+  document.getElementById("gresult").style.display = "none";
+  document.getElementById("gcheck").textContent     = "Check";
+  document.getElementById("progress").textContent   = (cur % deck.length + 1) + " / " + deck.length;
+  checked = false;
+}
+
+function checkAnswer() {
+  if (checked) { nextQ(); return; }
+  const p   = deck[cur % deck.length];
+  const inp = document.getElementById("ginput");
+  const raw = inp.value.trim();
+  if (!raw) { inp.focus(); return; }
+
+  const ignDia = document.getElementById("ignoreDia").checked;
+  const norm = s => {
+    let r = s.toLowerCase().replace(/[.,!?]/g,"").trim();
+    if (ignDia) r = r.replace(/ą/g,"a").replace(/ć/g,"c").replace(/ę/g,"e")
+                     .replace(/ł/g,"l").replace(/ń/g,"n").replace(/ó/g,"o")
+                     .replace(/ś/g,"s").replace(/ź/g,"z").replace(/ż/g,"z");
+    return r.replace(/\s+/g," ");
+  };
+
+  const expected = p.nom_adj + " " + p.nom_noun;
+  const ok = norm(raw) === norm(expected);
+  total++;
+  if (ok) correct++;
+  checked = true;
+
+  inp.classList.add(ok ? "g-ok" : "g-err");
+
+  const box = document.getElementById("gresult-box");
+  box.className = "gresult-box " + (ok ? "ok" : "err");
+  document.getElementById("rVerdict").textContent = ok ? "✅ Correct!" : "❌ Not quite…";
+
+  const ansEl = document.getElementById("rAnswer");
+  ansEl.innerHTML = ok
+    ? `<strong>${p.nom_adj} ${p.nom_noun}</strong>`
+    : `Correct answer: <strong>${p.nom_adj} ${p.nom_noun}</strong>`;
+
+  document.getElementById("rFullSent").innerHTML =
+    `To jest <span class="adj">${p.nom_adj}</span> <span class="noun">${p.nom_noun}</span>.`;
+
+  const rulesFn = NOM_RULES[p.g];
+  document.getElementById("rRule").textContent = rulesFn ? rulesFn(p) : "";
+
+  // Biernik comparison hint
+  const bhEl = document.getElementById("rBiernikHint");
+  if (document.getElementById("showBiernik").checked) {
+    const sameAcc = (p.nom_adj === p.acc_adj && p.nom_noun === p.acc_noun);
+    if (sameAcc) {
+      bhEl.innerHTML = `🔁 Biernik: same — <span class="adj">${p.acc_adj}</span> <span class="noun">${p.acc_noun}</span> (${p.verb} ${p.acc_adj} ${p.acc_noun}.) — no change for this gender!`;
+    } else {
+      bhEl.innerHTML = `🔁 Biernik: <span class="adj">${p.acc_adj}</span> <span class="noun">${p.acc_noun}</span> &nbsp;→&nbsp; ${p.verb} <span class="adj">${p.acc_adj}</span> <span class="noun">${p.acc_noun}</span>.`;
+    }
+    bhEl.style.display = "block";
+  } else {
+    bhEl.style.display = "none";
+  }
+
+  document.getElementById("gresult").style.display = "block";
+  document.getElementById("gcheck").textContent = "Next →";
+  updateScore();
+}
+
+function nextQ() {
+  cur = (cur + 1) % deck.length;
+  checked = false;
+  render();
+  setTimeout(() => document.getElementById("ginput").focus(), 60);
+}
+
+function updateScore() {
+  document.getElementById("score").textContent = "Score: " + correct + " / " + total;
+}
+
+function onKey(e) {
+  if (e.key === "Enter") { e.preventDefault(); checkAnswer(); }
+}
+
+function toggleCheat(btn) {
+  const body  = document.getElementById("cheatBody");
+  const arrow = document.getElementById("cheatArrow");
+  body.classList.toggle("open");
+  arrow.textContent = body.classList.contains("open") ? "▾" : "▸";
+}
+</script>
+</body>
+</html>

@@ -26,13 +26,32 @@
   </div>
 </div>
 
-<!-- Page switch -->
-<div class="page-switch">
-  <button class="page-btn active" id="btnPage1" onclick="switchPage(1)">&#127477;&#127473;&#8594;&#127480;&#127462; Learn</button>
-  <button class="page-btn"        id="btnPage2" onclick="switchPage(2)">&#127480;&#127462;&#8594;&#127477;&#127473; Guess</button>
-  <button class="page-btn"        id="btnPage3" onclick="switchPage(3)">&#9999;&#65039; Spell</button>
-  <a class="page-btn add-link" href="add.html">&#43; Add</a>
+<!-- App top bar -->
+<div class="app-topbar">
+  <span class="app-topbar-title" id="topbarTitle">🇵🇱→🇸🇦 Learn</span>
+  <button class="menu-btn" onclick="openMenu()">☰</button>
 </div>
+
+<!-- Nav overlay + drawer -->
+<div class="nav-overlay" id="navOverlay" onclick="closeMenu()"></div>
+<nav class="nav-drawer" id="navDrawer">
+  <div class="nav-drawer-hd">
+    <span style="font-size:14px;font-weight:600;color:#ccc">Polish A1</span>
+    <button class="nav-close-btn" onclick="closeMenu()">✕</button>
+  </div>
+  <p class="nav-section">Flashcards</p>
+  <button class="nav-item active" id="navItem1" onclick="navTo(1,'🇵🇱→🇸🇦 Learn')">🇵🇱→🇸🇦 Learn</button>
+  <button class="nav-item"        id="navItem2" onclick="navTo(2,'🇸🇦→🇵🇱 Guess')">🇸🇦→🇵🇱 Guess</button>
+  <button class="nav-item"        id="navItem3" onclick="navTo(3,'✏️ Spell Test')">✏️ Spell Test</button>
+  <p class="nav-section">Grammar</p>
+  <a class="nav-item" href="grammar-mianownik.html">📖 Mianownik — Noun forms</a>
+  <a class="nav-item" href="grammar-mianownik-frazy.html">📝 Mianownik — Adj + Noun phrases</a>
+  <a class="nav-item" href="grammar-biernik.html">📖 Biernik — Noun forms</a>
+  <a class="nav-item" href="grammar-biernik-frazy.html">📝 Biernik — Adj + Noun phrases</a>
+  <!-- <p class="nav-section">Manage</p>
+  <a class="nav-item" href="add.html">➕ Add Words</a>
+  <a class="nav-item" href="seed.html">🌱 Seed Database</a> -->
+</nav>
 
 <!-- PAGE 1: Polish front -->
 <div class="app" id="page1">
@@ -172,5 +191,23 @@
 </div>
 
 <script src="app.js"></script>
+<script>
+function openMenu() {
+  document.getElementById("navOverlay").classList.add("open");
+  document.getElementById("navDrawer").classList.add("open");
+}
+function closeMenu() {
+  document.getElementById("navOverlay").classList.remove("open");
+  document.getElementById("navDrawer").classList.remove("open");
+}
+function navTo(page, title) {
+  switchPage(page);
+  document.getElementById("topbarTitle").textContent = title;
+  document.querySelectorAll(".nav-item[id^='navItem']").forEach(el => el.classList.remove("active"));
+  const el = document.getElementById("navItem" + page);
+  if (el) el.classList.add("active");
+  closeMenu();
+}
+</script>
 </body>
 </html>

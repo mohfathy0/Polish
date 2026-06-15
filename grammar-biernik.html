@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Biernik — Polish Grammar</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* ── layout ── */
+    body { background:#0d0d0d; color:#ccc; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; margin:0; padding:0; }
+    /* ── topbar ── */
+    .gtop { position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:8px;
+            padding:10px 14px; background:#0d0d0d; border-bottom:.5px solid #2a2a2a; }
+    .gtop a { font-size:12px; color:#555; text-decoration:none; padding:5px 11px; border-radius:10px;
+              border:.5px solid #2a2a2a; background:#161616; white-space:nowrap; }
+    .gtop a:hover { color:#aaa; }
+    .gtop-title { font-size:14px; font-weight:600; color:#ccc; flex:1; text-align:center; }
+    /* ── score bar ── */
+    .gscore { display:flex; justify-content:space-between; padding:8px 16px 4px; font-size:12px; color:#555; }
+    /* ── filter tabs ── */
+    .gfilter { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; padding:10px 14px 6px; }
+    .gtab { padding:6px 13px; border-radius:18px; border:.5px solid #333; background:transparent;
+            color:#666; font-size:12px; cursor:pointer; transition:all .15s; }
+    .gtab small { opacity:.45; font-size:10px; margin-left:3px; }
+    .gtab:hover { color:#aaa; }
+    /* ── card ── */
+    .gcard { max-width:540px; margin:14px auto 0; padding:0 14px; }
+    .gbadge { display:inline-block; font-size:10px; text-transform:uppercase; letter-spacing:.1em;
+              padding:3px 11px; border-radius:10px; border:.5px solid; margin-bottom:10px; font-weight:600; }
+    .gar { font-size:22px; font-weight:600; color:#ddd; text-align:center; margin:4px 0; }
+    .gat { font-size:12px; color:#666; text-align:center; margin-bottom:2px; font-style:italic; }
+    .gen { font-size:14px; color:#888; text-align:center; margin-bottom:8px; }
+    .gnom-ref { font-size:12px; color:#555; text-align:center; margin-bottom:8px; }
+    .gnom-ref strong { color:#777; }
+    .gframe { font-size:18px; color:#aaa; text-align:center; margin:6px 0 14px; letter-spacing:.02em; }
+    .gblank { color:#444; border-bottom:1px dashed #444; padding:0 14px; }
+    .gframe-en { font-size:11px; color:#444; text-align:center; margin-top:-10px; margin-bottom:14px; font-style:italic; }
+    /* ── input ── */
+    .ginput-row { max-width:540px; margin:0 auto; padding:0 14px; display:flex; gap:8px; }
+    .ginput { flex:1; background:#161616; border:.5px solid #2a2a2a; border-radius:12px;
+              padding:12px 14px; color:#ccc; font-size:15px; outline:none; }
+    .ginput:focus { border-color:#444; }
+    .ginput.g-ok  { border-color:#4a7c59; background:#1a2a1f; color:#8fcca0; }
+    .ginput.g-err { border-color:#7c4a4a; background:#2a1a1a; color:#cc8080; }
+    .gcheck { padding:11px 18px; border-radius:12px; border:.5px solid #333; background:#1a1a1a;
+              color:#aaa; font-size:14px; cursor:pointer; white-space:nowrap; transition:all .15s; }
+    .gcheck:hover { background:#222; color:#ddd; }
+    /* ── result ── */
+    .gresult { max-width:540px; margin:12px auto 0; padding:0 14px; }
+    .gresult-box { padding:12px 14px; border-radius:12px; font-size:13px; line-height:1.65; text-align:center; }
+    .gresult-box.ok  { background:#4a7c5918; border:.5px solid #4a7c5940; }
+    .gresult-box.err { background:#7c4a4a18; border:.5px solid #7c4a4a40; }
+    .gresult-box .verdict { font-size:15px; font-weight:600; margin-bottom:4px; }
+    .gresult-box .answer  { color:#aaa; margin-bottom:6px; }
+    .gresult-box .answer strong { color:#ddd; }
+    .grule { font-size:11px; color:#666; font-style:italic; margin-top:6px; padding:6px 10px;
+             background:#1a1a1a; border-radius:8px; text-align:left; line-height:1.55; }
+    /* ── options ── */
+    .gopts { max-width:540px; margin:16px auto; padding:0 16px; }
+    .gopts label { display:flex; align-items:center; gap:8px; font-size:12px; color:#555; cursor:pointer; }
+    .gopts input[type=checkbox] { accent-color:#666; }
+    /* ── loading ── */
+    #loadWrap { display:flex; flex-direction:column; align-items:center; justify-content:center;
+                min-height:60vh; gap:16px; }
+    .spinner { width:32px; height:32px; border:3px solid #222; border-top-color:#666;
+               border-radius:50%; animation:spin .8s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    #mainWrap { display:none; }
+    /* ── empty state ── */
+    .gempty { max-width:340px; margin:60px auto; text-align:center; color:#555; font-size:13px; line-height:1.7; }
+    .gempty a { color:#888; }
+  </style>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="gtop">
+  <a href="grammar-mianownik.html">← Mianownik</a>
+  <span class="gtop-title">Biernik — Accusative</span>
+  <a href="index.html">Flashcards →</a>
+</div>
+
+<!-- LOADING -->
+<div id="loadWrap">
+  <div class="spinner"></div>
+  <span style="font-size:13px;color:#555;">Loading nouns…</span>
+</div>
+
+<!-- MAIN -->
+<div id="mainWrap">
+
+  <!-- SCORE -->
+  <div class="gscore">
+    <span id="progress">1 / 0</span>
+    <span id="score">Score: 0 / 0</span>
+  </div>
+
+  <!-- FILTER TABS -->
+  <div class="gfilter">
+    <button class="gtab active" id="tab-all"    onclick="selectFilter('all')">All <small id="cnt-all">0</small></button>
+    <button class="gtab"        id="tab-m_anim" onclick="selectFilter('m_anim')">M.Anim <small id="cnt-m_anim">0</small></button>
+    <button class="gtab"        id="tab-m_inan" onclick="selectFilter('m_inan')">M.Inan <small id="cnt-m_inan">0</small></button>
+    <button class="gtab"        id="tab-f"      onclick="selectFilter('f')">Fem. <small id="cnt-f">0</small></button>
+    <button class="gtab"        id="tab-n"      onclick="selectFilter('n')">Neut. <small id="cnt-n">0</small></button>
+  </div>
+
+  <!-- QUESTION CARD -->
+  <div class="gcard" id="qcard">
+    <div style="text-align:center"><span class="gbadge" id="badge">—</span></div>
+    <div class="gar"     id="qar"></div>
+    <div class="gat"     id="qat"></div>
+    <div class="gen"     id="qen"></div>
+    <div class="gnom-ref">Nominative: <strong id="qnom">—</strong></div>
+    <div class="gframe"  id="gframe">Widzę <span class="gblank">___</span>.</div>
+    <div class="gframe-en" id="gframe-en">I see ___.</div>
+  </div>
+
+  <!-- INPUT ROW -->
+  <div class="ginput-row" style="margin-top:10px">
+    <input id="ginput" class="ginput" type="text" autocomplete="off" autocorrect="off"
+           spellcheck="false" placeholder="Type the Polish accusative…"
+           onkeydown="onKey(event)">
+    <button class="gcheck" id="gcheck" onclick="checkAnswer()">Check</button>
+  </div>
+
+  <!-- RESULT -->
+  <div class="gresult" id="gresult" style="display:none">
+    <div class="gresult-box" id="gresult-box">
+      <div class="verdict" id="rVerdict"></div>
+      <div class="answer"  id="rAnswer"></div>
+      <div class="grule"   id="rRule"></div>
+    </div>
+  </div>
+
+  <!-- OPTIONS -->
+  <div class="gopts">
+    <label>
+      <input type="checkbox" id="ignoreDia" checked>
+      Ignore diacritics (ą→a, ę→e, ó→o…)
+    </label>
+  </div>
+
+</div><!-- /mainWrap -->
+
+<script>
+const firebaseConfig = {
+  apiKey:            "AIzaSyDuSZnygLFaNNzfzN6qjR1S0GHwD-hMVj4",
+  authDomain:        "polish-24ab6.firebaseapp.com",
+  projectId:         "polish-24ab6",
+  storageBucket:     "polish-24ab6.firebasestorage.app",
+  messagingSenderId: "379033735292",
+  appId:             "1:379033735292:web:e9872f7c46187ffbd339f9"
+};
+
+const GENDER = {
+  m_anim: { label:"Masculine Animate",   color:"#4a9acc", bg:"#1a2a3a", border:"#2a4a5a" },
+  m_inan: { label:"Masculine Inanimate", color:"#6acc7a", bg:"#1a2a1a", border:"#2a4a2a" },
+  f:      { label:"Feminine",            color:"#cc6aac", bg:"#2a1a2a", border:"#4a2a4a" },
+  n:      { label:"Neuter",              color:"#ccac6a", bg:"#2a2a1a", border:"#4a4a2a" },
+};
+
+/* Sentence frames by gender */
+const FRAMES = {
+  m_anim: { pl:"Widzę ___.  ", en:"I see ___." },
+  m_inan: { pl:"Mam ___.    ", en:"I have ___." },
+  f:      { pl:"Lubię ___. ", en:"I like ___." },
+  n:      { pl:"Mam ___.    ", en:"I have ___." },
+};
+
+let allNouns = [], deck = [], cur = 0, correct = 0, total = 0, checked = false;
+let currentFilter = "all";
+
+/* ── init ── */
+(async () => {
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  try {
+    const snap = await db.collection("grammar_nouns").get();
+    if (snap.empty) {
+      showEmpty();
+      return;
+    }
+    allNouns = snap.docs.map(d => d.data());
+    buildCounts();
+    buildDeck("all");
+    render();
+    document.getElementById("loadWrap").style.display = "none";
+    document.getElementById("mainWrap").style.display = "block";
+    setTimeout(() => document.getElementById("ginput").focus(), 200);
+  } catch (err) {
+    showError("Firebase error: " + err.message);
+  }
+})();
+
+/* ── filter ── */
+function selectFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll(".gtab").forEach(t => {
+    t.classList.remove("active");
+    t.style.color = "";
+    t.style.borderColor = "";
+    t.style.background = "";
+  });
+  const el = document.getElementById("tab-" + f);
+  el.classList.add("active");
+  if (f !== "all" && GENDER[f]) {
+    el.style.color = GENDER[f].color;
+    el.style.borderColor = GENDER[f].color + "66";
+    el.style.background = GENDER[f].bg;
+  } else {
+    el.style.color = "#ccc";
+    el.style.borderColor = "#555";
+    el.style.background = "#1a1a1a";
+  }
+  buildDeck(f);
+  cur = 0; correct = 0; total = 0; checked = false;
+  document.getElementById("gresult").style.display = "none";
+  updateScore();
+  render();
+  setTimeout(() => document.getElementById("ginput").focus(), 60);
+}
+
+function buildCounts() {
+  document.getElementById("cnt-all").textContent = allNouns.length;
+  ["m_anim","m_inan","f","n"].forEach(g => {
+    document.getElementById("cnt-" + g).textContent = allNouns.filter(n => n.g === g).length;
+  });
+}
+
+function buildDeck(f) {
+  deck = (f === "all" ? [...allNouns] : allNouns.filter(n => n.g === f));
+  shuffle(deck);
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+/* ── render question ── */
+function render() {
+  if (!deck.length) return;
+  const noun = deck[cur % deck.length];
+  const gi = GENDER[noun.g] || { label: noun.g, color:"#888", bg:"#1a1a1a", border:"#333" };
+
+  const badge = document.getElementById("badge");
+  badge.textContent = gi.label;
+  badge.style.color       = gi.color;
+  badge.style.background  = gi.bg;
+  badge.style.borderColor = gi.border;
+
+  document.getElementById("qar").textContent = noun.ar  || "";
+  document.getElementById("qat").textContent = noun.at  || "";
+  document.getElementById("qen").textContent = noun.en  || "";
+  document.getElementById("qnom").textContent = noun.nom || "—";
+
+  const frame = FRAMES[noun.g] || FRAMES.n;
+  document.getElementById("gframe").innerHTML =
+    frame.pl.trimEnd().replace("___", '<span class="gblank">___</span>');
+  document.getElementById("gframe-en").textContent = frame.en;
+
+  const inp = document.getElementById("ginput");
+  inp.value = "";
+  inp.className = "ginput";
+
+  document.getElementById("gresult").style.display = "none";
+  document.getElementById("gcheck").textContent = "Check";
+  document.getElementById("progress").textContent = (cur % deck.length + 1) + " / " + deck.length;
+  checked = false;
+}
+
+/* ── check ── */
+function checkAnswer() {
+  if (checked) { nextQ(); return; }
+  const noun = deck[cur % deck.length];
+  const inp  = document.getElementById("ginput");
+  const raw  = inp.value.trim();
+  if (!raw) { inp.focus(); return; }
+
+  const ignDia = document.getElementById("ignoreDia").checked;
+  const norm = s => {
+    let r = s.toLowerCase().replace(/[.,!?]/g, "").trim();
+    if (ignDia) r = r.replace(/ą/g,"a").replace(/ć/g,"c").replace(/ę/g,"e")
+                     .replace(/ł/g,"l").replace(/ń/g,"n").replace(/ó/g,"o")
+                     .replace(/ś/g,"s").replace(/ź/g,"z").replace(/ż/g,"z");
+    return r;
+  };
+
+  const ok = norm(raw) === norm(noun.acc);
+  total++;
+  if (ok) correct++;
+  checked = true;
+
+  inp.classList.add(ok ? "g-ok" : "g-err");
+
+  const box = document.getElementById("gresult-box");
+  box.className = "gresult-box " + (ok ? "ok" : "err");
+  document.getElementById("rVerdict").textContent = ok ? "✅ Correct!" : "❌ Not quite…";
+  document.getElementById("rAnswer").innerHTML = ok
+    ? `<strong>${noun.acc}</strong>`
+    : `Correct answer: <strong>${noun.acc}</strong>`;
+  document.getElementById("rRule").textContent = noun.r_acc || "";
+  document.getElementById("gresult").style.display = "block";
+  document.getElementById("gcheck").textContent = "Next →";
+  updateScore();
+}
+
+function nextQ() {
+  cur = (cur + 1) % deck.length;
+  checked = false;
+  render();
+  setTimeout(() => document.getElementById("ginput").focus(), 60);
+}
+
+function updateScore() {
+  document.getElementById("score").textContent = "Score: " + correct + " / " + total;
+}
+
+function onKey(e) {
+  if (e.key === "Enter") { e.preventDefault(); checkAnswer(); }
+}
+
+function showEmpty() {
+  document.getElementById("loadWrap").innerHTML = `
+    <div class="gempty">
+      No grammar nouns found.<br>
+      Go to <a href="seed.html">seed.html</a> and choose<br>
+      <em>Grammar Nouns</em> from the dropdown, then seed.
+    </div>`;
+}
+
+function showError(msg) {
+  document.getElementById("loadWrap").innerHTML =
+    `<div class="gempty" style="color:#c07a7a">${msg}</div>`;
+}
+</script>
+</body>
+</html>
