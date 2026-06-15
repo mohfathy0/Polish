@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Polish Flashcards — Firebase Seeder</title>
+
+<!-- Firebase Web SDK (same version as the app) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d0d0d;color:#eee;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.card{background:#161616;border:0.5px solid #2a2a2a;border-radius:18px;padding:28px 24px;max-width:520px;width:100%}
+h1{font-size:16px;font-weight:600;color:#eee;margin-bottom:4px}
+.sub{font-size:12px;color:#555;margin-bottom:24px}
+label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#555;margin-bottom:6px}
+input{
+  width:100%;padding:10px 14px;border-radius:10px;border:0.5px solid #333;
+  background:#0d0d0d;color:#eee;font-size:13px;outline:none;
+  transition:border-color 0.2s;margin-bottom:16px;
+}
+input:focus{border-color:#555}
+.rule-note{
+  background:#1a1a0a;border:0.5px solid #4a4a1a;border-radius:10px;
+  padding:12px 14px;margin-bottom:20px;font-size:12px;color:#888;line-height:1.7;
+}
+.rule-note code{color:#aaa;background:#111;padding:1px 5px;border-radius:4px;font-size:11px}
+.btn{
+  width:100%;padding:13px;border-radius:12px;border:none;cursor:pointer;
+  font-size:14px;font-weight:500;transition:all 0.15s;
+}
+.btn-seed{background:#1e3a2a;color:#6aac7a;border:0.5px solid #2a5a3a}
+.btn-seed:hover{background:#253f2f}
+.btn-seed:disabled{opacity:0.4;cursor:default}
+.btn-clear{background:#1a1a1a;color:#888;border:0.5px solid #2a2a2a;margin-top:8px}
+.btn-clear:hover{background:#222}
+.btn-clear:disabled{opacity:0.4;cursor:default}
+.progress{margin-top:20px;display:none}
+.progress-bar-wrap{height:4px;background:#1a1a1a;border-radius:2px;overflow:hidden;margin-bottom:10px}
+.progress-bar{height:100%;background:#4a7c59;border-radius:2px;width:0;transition:width 0.2s}
+.log{
+  max-height:220px;overflow-y:auto;font-size:11px;line-height:1.8;
+  color:#555;font-family:monospace;
+}
+.log .ok{color:#6aac7a}
+.log .err{color:#c07a7a}
+.log .info{color:#888}
+.log .warn{color:#c0a04a}
+.summary{
+  margin-top:14px;padding:12px 14px;border-radius:10px;
+  font-size:12px;line-height:1.7;display:none;
+}
+.summary.success{background:#4a7c5918;border:0.5px solid #4a7c5940;color:#6aac7a}
+.summary.failure{background:#7c4a4a18;border:0.5px solid #7c4a4a40;color:#c07a7a}
+a{color:#6aaccc;font-size:11px}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>🌱 Firebase Seeder</h1>
+  <p class="sub">Uploads the complete Polish A1 vocabulary to your Realtime Database</p>
+
+  <label>Firebase API Key</label>
+  <input type="text" id="apiKey" value="AIzaSyDuSZnygLFaNNzfzN6qjR1S0GHwD-hMVj4" placeholder="AIzaSy...">
+
+  <label>Project ID</label>
+  <input type="text" id="projectId" value="polish-24ab6" placeholder="my-project-id">
+
+  <label>Messaging Sender ID</label>
+  <input type="text" id="messagingSenderId" value="379033735292" placeholder="123456789">
+
+  <label>App ID</label>
+  <input type="text" id="appId" value="1:379033735292:web:e9872f7c46187ffbd339f9" placeholder="1:123456789:web:abc123">
+
+  <div class="rule-note">
+    ⚠️ Before seeding, set your Firestore rules to allow writes:<br>
+    Firebase Console → Firestore Database → Rules → paste:<br>
+    <code>rules_version = '2';<br>service cloud.firestore {<br>&nbsp;&nbsp;match /databases/{db}/documents {<br>&nbsp;&nbsp;&nbsp;&nbsp;match /{doc=**} { allow read, write: if true; }<br>&nbsp;&nbsp;}<br>}</code><br>
+    After seeding, change <code>write: if true</code> back to <code>write: if false</code>.
+  </div>
+
+  <button class="btn btn-seed" id="seedBtn" onclick="startSeed()">Upload vocabulary to Firebase</button>
+  <button class="btn btn-clear" id="clearBtn" onclick="startClear()">Clear database</button>
+
+  <div class="progress" id="progressWrap">
+    <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+    <div class="log" id="log"></div>
+  </div>
+  <div class="summary" id="summary"></div>
+</div>
+
+<script>
+/* =====================================================================
+   FULL A1 DATASET
+   ===================================================================== */
+const themesData = [
+  { id:"daily",   label:"Daily life",      icon:"🏠" },
+  { id:"transit", label:"Getting around",  icon:"🚌" },
+  { id:"food",    label:"Food & cafes",    icon:"☕" },
+  { id:"shop",    label:"Shopping",        icon:"🛍️" },
+  { id:"social",  label:"Small talk",      icon:"💬" },
+  { id:"time",    label:"Time & Calendar", icon:"📅" },
+  { id:"work",    label:"Work",            icon:"💼" },
+  { id:"health",  label:"Health",          icon:"🏥" },
+  { id:"home",    label:"Home",            icon:"🏡" },
+  { id:"numbers", label:"Numbers",         icon:"🔢" },
+  { id:"weather", label:"Weather",         icon:"🌤️" },
+  { id:"colors",  label:"Colors",          icon:"🎨" },
+  { id:"family",  label:"Family",          icon:"👨‍👩‍👧" },
+  { id:"verbs",   label:"Basic Verbs",     icon:"⚡" },
+  { id:"places",  label:"Places",          icon:"📍" },
+  { id:"body",    label:"Body Parts",      icon:"🫀" },
+];
+
+const vocabularyData = [
+  // ── DAILY ──────────────────────────────────────────────────────────────────
+  {t:"daily",p:"Dzień dobry.",              r:"djen DOH-bry",                       a:"صباح الخير.",               at:"sabah al-khayr",                          e:"Good morning.",                         k:"dzień dobry"},
+  {t:"daily",p:"Dobry wieczór.",            r:"DOH-bry vye-CHOOR",                  a:"مساء الخير.",               at:"masa' al-khayr",                          e:"Good evening.",                         k:"wieczór"},
+  {t:"daily",p:"Dobranoc.",                 r:"doh-BRAH-nots",                      a:"تصبح على خير.",             at:"tusbih 'ala khayr",                       e:"Good night.",                           k:"dobranoc"},
+  {t:"daily",p:"Jak się masz?",             r:"yak sheh mash",                      a:"كيف حالك؟",                 at:"kayfa halak?",                            e:"How are you?",                          k:"jak się masz"},
+  {t:"daily",p:"Dobrze, dziękuję.",         r:"DOH-bzhe, djen-KOO-yeh",             a:"بخير، شكراً.",              at:"bikhair, shukran",                        e:"Fine, thank you.",                      k:"dobrze"},
+  {t:"daily",p:"Nie rozumiem.",             r:"nyeh roh-ZOO-myem",                  a:"لا أفهم.",                  at:"la afham",                                e:"I don't understand.",                   k:"nie rozumiem"},
+  {t:"daily",p:"Czy mówisz po angielsku?",  r:"chi MOO-vish poh an-GYEL-skoo",      a:"هل تتكلم الإنجليزية؟",     at:"hal tatakallam al-ingleeziyya?",          e:"Do you speak English?",                 k:"mówisz"},
+  {t:"daily",p:"Proszę mówić wolniej.",     r:"PROH-sheh MOO-vich VOL-nyey",        a:"من فضلك تكلم ببطء.",        at:"min fadlak takallam bibut'",              e:"Please speak slower.",                  k:"wolniej"},
+  {t:"daily",p:"Jak to się mówi po polsku?",r:"yak toh sheh MOO-vee poh POL-skoo",  a:"كيف تقول هذا بالبولندية؟", at:"kayfa taqul hadha bil-bulundiyya?",       e:"How do you say this in Polish?",        k:"po polsku"},
+  {t:"daily",p:"Mieszkam w Warszawie.",     r:"myesh-KAM v var-SHA-vye",            a:"أسكن في وارسو.",            at:"askun fi warso",                          e:"I live in Warsaw.",                     k:"mieszkam"},
+  {t:"daily",p:"Mam klucze.",               r:"mam KLOO-cheh",                      a:"معي المفاتيح.",             at:"ma'i al-mafateeh",                        e:"I have the keys.",                      k:"mam"},
+  {t:"daily",p:"To jest moje mieszkanie.",  r:"toh yest MOH-ye myesh-KAH-nye",      a:"هذه شقتي.",                 at:"hadhihi shaqati",                         e:"This is my apartment.",                 k:"mieszkanie"},
+  {t:"daily",p:"Chcę się położyć.",         r:"htseh sheh poh-WOH-zhich",           a:"أريد أن أنام.",             at:"ureed an anam",                           e:"I want to lie down.",                   k:"chcę"},
+  {t:"daily",p:"Jestem zmęczony.",          r:"YES-tem zmen-CHOH-ny",               a:"أنا متعب.",                 at:"ana mut'ab",                              e:"I'm tired.",                            k:"zmęczony"},
+  {t:"daily",p:"Potrzebuję pomocy.",        r:"poh-tsheh-BOO-yeh poh-MOH-tsy",      a:"أحتاج مساعدة.",            at:"ahtaj musa'ada",                          e:"I need help.",                          k:"potrzebuję"},
+  {t:"daily",p:"Gdzie jest łazienka?",      r:"gdye yest wah-ZYEN-kah",             a:"أين الحمام؟",               at:"ayna al-hammam?",                         e:"Where is the bathroom?",                k:"łazienka"},
+  {t:"daily",p:"Włącz światło, proszę.",    r:"vwonch SHVYAT-woh PROH-sheh",        a:"أضئ النور، من فضلك.",       at:"adhi' al-noor, min fadlak",               e:"Turn on the light, please.",            k:"włącz"},
+  {t:"daily",p:"Zimno mi.",                 r:"ZEEM-noh mee",                       a:"أنا بارد.",                 at:"ana barid",                               e:"I'm cold.",                             k:"zimno"},
+  {t:"daily",p:"Gorąco mi.",                r:"goh-ROHN-tso mee",                   a:"أنا حار.",                  at:"ana harr",                                e:"I'm hot.",                              k:"gorąco"},
+  {t:"daily",p:"Idę spać.",                 r:"EE-deh spach",                       a:"سأنام الآن.",               at:"sa'anam al-an",                           e:"I'm going to sleep.",                   k:"idę spać"},
+  {t:"daily",p:"Zaraz wracam.",             r:"ZAH-raz VRAH-tsam",                  a:"سأعود قريباً.",             at:"sa'aood qareeban",                        e:"I'll be right back.",                   k:"zaraz"},
+  {t:"daily",p:"Przepraszam za spóźnienie.",r:"pshe-PROH-shahm zah spoozh-NYE-nye", a:"آسف على التأخير.",          at:"asif 'ala al-ta'kheer",                   e:"Sorry for being late.",                 k:"spóźnienie"},
+  {t:"daily",p:"Nie ma problemu.",          r:"nyeh mah proh-BLE-moo",              a:"لا مشكلة.",                 at:"la mushkila",                             e:"No problem.",                           k:"nie ma problemu"},
+  {t:"daily",p:"Rozumiem.",                 r:"roh-ZOO-myem",                       a:"أفهم.",                     at:"afham",                                   e:"I understand.",                         k:"rozumiem"},
+  {t:"daily",p:"Czy mogę otworzyć okno?",   r:"chi MOH-geh ot-VOH-zhich OK-noh",    a:"هل يمكنني فتح النافذة؟",   at:"hal yumkinuni fath al-nafidha?",          e:"Can I open the window?",                k:"mogę"},
+  {t:"daily",p:"Przepraszam, nie słyszę.",  r:"pshe-PROH-shahm nyeh SWIH-sheh",     a:"آسف، لا أسمع.",             at:"asif, la asma'",                          e:"Sorry, I can't hear.",                  k:"słyszę"},
+  {t:"daily",p:"Możesz powtórzyć?",         r:"MOH-zhesh pov-TOO-zhich",            a:"هل يمكنك التكرار؟",         at:"hal yumkinuka al-tikrar?",                e:"Can you repeat?",                       k:"powtórzyć"},
+  {t:"daily",p:"Proszę napisać to.",        r:"PROH-sheh nah-PEE-sach toh",         a:"من فضلك اكتب هذا.",         at:"min fadlak uktub hadha",                  e:"Please write that down.",               k:"napisać"},
+  {t:"daily",p:"Cześć!",                    r:"cheshch",                            a:"مرحباً! / وداعاً!",         at:"marhaban! / wada'an!",                    e:"Hi! / Bye! (informal)",                 k:"cześć"},
+  {t:"daily",p:"Tak.",                      r:"tak",                                a:"نعم.",                      at:"na'am",                                   e:"Yes.",                                  k:"tak"},
+  {t:"daily",p:"Nie.",                      r:"nyeh",                               a:"لا.",                       at:"la",                                      e:"No.",                                   k:"nie"},
+  {t:"daily",p:"Proszę.",                   r:"PROH-sheh",                          a:"من فضلك / تفضل.",           at:"min fadlak / tafaddal",                   e:"Please / Here you go.",                 k:"proszę"},
+  {t:"daily",p:"Dziękuję.",                 r:"djen-KOO-yeh",                       a:"شكراً.",                    at:"shukran",                                 e:"Thank you.",                            k:"dziękuję"},
+  {t:"daily",p:"Przepraszam.",              r:"pshe-PROH-shahm",                    a:"آسف / عفواً.",              at:"asif / 'afwan",                           e:"Sorry / Excuse me.",                    k:"przepraszam"},
+
+  // ── TRANSIT ────────────────────────────────────────────────────────────────
+  {t:"transit",p:"Gdzie jest metro?",                  r:"gdye yest ME-troh",                            a:"أين المترو؟",                 at:"ayna al-metro?",                         e:"Where is the metro?",                       k:"metro"},
+  {t:"transit",p:"Ile to kosztuje?",                   r:"EE-leh toh kosh-TOO-yeh",                      a:"كم يكلف هذا؟",                at:"kam yukallifu hadha?",                    e:"How much does this cost?",                  k:"ile kosztuje"},
+  {t:"transit",p:"Poproszę bilet.",                    r:"poh-PROH-sheh BEE-let",                        a:"تذكرة، من فضلك.",             at:"tadhkara, min fadlak",                    e:"A ticket, please.",                         k:"bilet"},
+  {t:"transit",p:"Czy to jest autobus do centrum?",    r:"chi toh yest ow-TOH-boos doh TSEN-troom",      a:"هل هذا الأوتوبيس للمركز؟",   at:"hal hadha al-otoobees lil-markaz?",       e:"Is this the bus to the center?",            k:"autobus"},
+  {t:"transit",p:"Przepraszam, zgubiam się.",          r:"pshe-PROH-shahm ZGOO-byam sheh",               a:"عفواً، أنا ضائع.",            at:"'afwan, ana da'i'",                       e:"Excuse me, I'm lost.",                      k:"zgubiam się"},
+  {t:"transit",p:"Ile minut stąd?",                    r:"EE-leh MEE-noot stont",                        a:"كم دقيقة من هنا؟",            at:"kam daqeeqa min huna?",                   e:"How many minutes from here?",               k:"stąd"},
+  {t:"transit",p:"Następny przystanek.",               r:"nas-TEMP-ny pshi-STAH-nek",                    a:"المحطة القادمة.",             at:"al-mahatta al-qadima",                    e:"Next stop.",                                k:"następny"},
+  {t:"transit",p:"Proszę, gdzie wysiąść?",             r:"PROH-sheh gdye vy-SHONSHCH",                   a:"من فضلك، أين أنزل؟",          at:"min fadlak, ayna anzil?",                 e:"Please, where should I get off?",           k:"wysiąść"},
+  {t:"transit",p:"Jak dojechać na lotnisko?",          r:"yak doh-YEH-hach nah lot-NEE-skoh",            a:"كيف أصل إلى المطار؟",         at:"kayfa asil ila al-matar?",                e:"How do I get to the airport?",              k:"lotnisko"},
+  {t:"transit",p:"Czy jest tu parking?",               r:"chi yest too PAR-king",                        a:"هل يوجد موقف سيارات هنا؟",   at:"hal yujad mawqif sayyarat huna?",         e:"Is there parking here?",                    k:"parking"},
+  {t:"transit",p:"Skręć w lewo.",                      r:"skrehnch v LEH-voh",                           a:"اتجه يساراً.",                at:"ittajeh yasaran",                         e:"Turn left.",                                k:"lewo"},
+  {t:"transit",p:"Skręć w prawo.",                     r:"skrehnch v PRAH-voh",                          a:"اتجه يميناً.",                at:"ittajeh yamenan",                         e:"Turn right.",                               k:"prawo"},
+  {t:"transit",p:"Idź prosto.",                        r:"eetch PROH-stoh",                              a:"امش مستقيماً.",              at:"imshi mustaqeeman",                       e:"Go straight.",                              k:"prosto"},
+  {t:"transit",p:"To jest daleko?",                    r:"toh yest dah-LEH-koh",                         a:"هل هذا بعيد؟",                at:"hal hadha ba'eed?",                       e:"Is it far?",                                k:"daleko"},
+  {t:"transit",p:"Zadzwoń do mnie.",                   r:"ZAD-zvon doh MNYEH",                           a:"اتصل بي.",                    at:"ittasil bi",                              e:"Call me.",                                  k:"zadzwoń"},
+  {t:"transit",p:"Czekam na ciebie.",                  r:"CHE-kam nah CHYE-bye",                         a:"أنا في انتظارك.",             at:"ana fi intizarak",                        e:"I'm waiting for you.",                      k:"czekam"},
+  {t:"transit",p:"Mój adres to...",                    r:"mooy AH-dres toh",                             a:"عنواني هو...",                at:"'unwani huwa...",                         e:"My address is...",                          k:"adres"},
+  {t:"transit",p:"Poproszę taksówkę.",                 r:"poh-PROH-sheh tak-SOOF-keh",                   a:"أريد سيارة أجرة، من فضلك.",  at:"ureed sayyarat ujra, min fadlak",         e:"A taxi, please.",                           k:"taksówka"},
+  {t:"transit",p:"Czy mogę tu zaparkować?",            r:"chi MOH-geh too zah-par-KOH-vach",             a:"هل يمكنني الوقوف هنا؟",       at:"hal yumkinuni al-wuqoof huna?",           e:"Can I park here?",                          k:"zaparkować"},
+  {t:"transit",p:"O której godzinie odjeżdża pociąg?", r:"oh KTOO-rey goh-JEE-nye od-YEZH-jah POH-chyong",a:"في أي ساعة يغادر القطار؟",  at:"fi ayyi sa'a yughadir al-qitar?",         e:"What time does the train leave?",           k:"pociąg"},
+
+  // ── FOOD ───────────────────────────────────────────────────────────────────
+  {t:"food",p:"Poproszę kawę z mlekiem.",       r:"poh-PROH-sheh KAH-veh z mle-KYEM",      a:"قهوة بالحليب، من فضلك.",        at:"qahwa bil-haleeb, min fadlak",         e:"A coffee with milk, please.",     k:"kawa"},
+  {t:"food",p:"Co polecasz?",                   r:"tso poh-LEH-tsash",                      a:"ماذا توصي؟",                    at:"madha tusi?",                          e:"What do you recommend?",          k:"polecasz"},
+  {t:"food",p:"Czy jest menu po angielsku?",    r:"chi yest ME-noo poh an-GYEL-skoo",       a:"هل يوجد قائمة بالإنجليزية؟",   at:"hal yujad qa'ima bil-ingleeziyya?",    e:"Is there a menu in English?",     k:"menu"},
+  {t:"food",p:"Poproszę rachunek.",             r:"poh-PROH-sheh ra-HOO-nek",               a:"الحساب، من فضلك.",              at:"al-hisab, min fadlak",                 e:"The bill, please.",               k:"rachunek"},
+  {t:"food",p:"Jestem głodny.",                 r:"YES-tem GWOD-ny",                        a:"أنا جائع.",                     at:"ana ja'i'",                            e:"I'm hungry.",                     k:"głodny"},
+  {t:"food",p:"To jest bardzo smaczne.",        r:"toh yest BAR-dzoh SMACH-neh",            a:"هذا لذيذ جداً.",                at:"hadha ladheedh jiddan",                e:"This is very tasty.",             k:"smaczne"},
+  {t:"food",p:"Nie jem mięsa.",                 r:"nyeh yem MYEN-sah",                      a:"أنا لا آكل اللحم.",             at:"ana la akul al-lahm",                  e:"I don't eat meat.",               k:"nie jem"},
+  {t:"food",p:"Poproszę szklankę wody.",        r:"poh-PROH-sheh shklan-KEH VOH-dy",        a:"كوب ماء، من فضلك.",             at:"koob ma', min fadlak",                 e:"A glass of water, please.",       k:"woda"},
+  {t:"food",p:"Czy to jest ostre?",             r:"chi toh yest OS-treh",                   a:"هل هذا حار؟",                   at:"hal hadha harr?",                      e:"Is this spicy?",                  k:"ostre"},
+  {t:"food",p:"Bez cukru, proszę.",             r:"bez TSOO-kroo PROH-sheh",                a:"بدون سكر، من فضلك.",            at:"bidoon sukkar, min fadlak",            e:"Without sugar, please.",          k:"bez cukru"},
+  {t:"food",p:"Na wynos, proszę.",              r:"nah VY-nos PROH-sheh",                   a:"للأخذ، من فضلك.",               at:"lil-akhdh, min fadlak",                e:"To take away, please.",           k:"na wynos"},
+  {t:"food",p:"Stolik dla dwóch osób.",         r:"STOH-leek dlah dvooh OH-soob",           a:"طاولة لشخصين.",                 at:"tawila lishakhsayn",                   e:"A table for two.",                k:"stolik"},
+  {t:"food",p:"Czy mogę zamówić?",              r:"chi MOH-geh zah-MOO-veech",              a:"هل يمكنني الطلب؟",             at:"hal yumkinuni al-talab?",              e:"Can I order?",                    k:"zamówić"},
+  {t:"food",p:"Mam alergię na orzechy.",        r:"mam ah-LER-gyeh nah oh-ZHE-hy",          a:"عندي حساسية من المكسرات.",      at:"'indi hasasiyya min al-mukassarat",    e:"I'm allergic to nuts.",           k:"alergia"},
+  {t:"food",p:"To jest za słone.",              r:"toh yest zah SWOH-neh",                  a:"هذا مالح جداً.",                at:"hadha malih jiddan",                   e:"This is too salty.",              k:"słone"},
+  {t:"food",p:"Poproszę herbatę.",              r:"poh-PROH-sheh her-BAH-teh",              a:"شاي، من فضلك.",                 at:"shay, min fadlak",                     e:"A tea, please.",                  k:"herbata"},
+  {t:"food",p:"Czy jest coś wegetariańskiego?", r:"chi yest tsosh ve-ge-tah-RYAHN-skye-go", a:"هل يوجد شيء نباتي؟",           at:"hal yujad shay' nabati?",              e:"Is there something vegetarian?",  k:"wegetariańskie"},
+  {t:"food",p:"Jestem najedzony.",              r:"YES-tem nah-ye-DOH-ny",                  a:"أنا شبعان.",                    at:"ana shab'an",                          e:"I'm full.",                       k:"najedzony"},
+  {t:"food",p:"Zapłacimy osobno.",              r:"zah-PWAH-tsee-my oh-SOB-noh",            a:"سندفع كل واحد منا على حدة.",   at:"sanadfa' kull wahid minna 'ala hidda", e:"We'll pay separately.",           k:"osobno"},
+  {t:"food",p:"Czy mogę dostać paragon?",       r:"chi MOH-geh DOS-tach pah-RAH-gon",       a:"هل يمكنني الحصول على إيصال؟",  at:"hal yumkinuni al-husool 'ala eesal?",  e:"Can I get a receipt?",            k:"paragon"},
+  {t:"food",p:"Poproszę jeszcze raz.",          r:"poh-PROH-sheh YESH-cheh ras",            a:"مرة أخرى، من فضلك.",            at:"marra ukhra, min fadlak",              e:"Once more / same again.",         k:"jeszcze raz"},
+
+  // ── SHOP ───────────────────────────────────────────────────────────────────
+  {t:"shop",p:"Gdzie jest sklep spożywczy?", r:"gdye yest sklep spoh-ZHYV-chy",       a:"أين متجر البقالة؟",            at:"ayna matjar al-buqala?",             e:"Where is the grocery store?",   k:"sklep"},
+  {t:"shop",p:"Ile to kosztuje?",            r:"EE-leh toh kosh-TOO-yeh",              a:"كم سعر هذا؟",                  at:"kam si'r hadha?",                    e:"How much does this cost?",      k:"kosztuje"},
+  {t:"shop",p:"Czy mogę zapłacić kartą?",    r:"chi MOH-geh zah-PWAH-cheech KAR-toh",  a:"هل يمكنني الدفع بالبطاقة؟",   at:"hal yumkinuni al-daf' bil-bitaqa?",  e:"Can I pay by card?",            k:"zapłacić"},
+  {t:"shop",p:"Poproszę torbę.",             r:"poh-PROH-sheh TOR-beh",                a:"كيس، من فضلك.",                at:"kees, min fadlak",                   e:"A bag, please.",                k:"torba"},
+  {t:"shop",p:"Czy macie rozmiar M?",        r:"chi MAH-chye ROZ-myar em",              a:"هل عندكم مقاس M؟",             at:"hal 'indakum maqas M?",              e:"Do you have size M?",           k:"rozmiar"},
+  {t:"shop",p:"To jest za drogie.",          r:"toh yest zah DROH-gye",                a:"هذا غالي جداً.",               at:"hadha ghali jiddan",                 e:"This is too expensive.",        k:"drogie"},
+  {t:"shop",p:"Szukam apteki.",              r:"SHOO-kam ap-TEH-kee",                  a:"أبحث عن صيدلية.",              at:"abhath 'an saydaliyya",              e:"I'm looking for a pharmacy.",   k:"apteka"},
+  {t:"shop",p:"Czy jest tu bankomat?",       r:"chi yest too ban-KOH-mat",              a:"هل يوجد صراف آلي هنا؟",        at:"hal yujad sarraf ali huna?",         e:"Is there an ATM here?",         k:"bankomat"},
+  {t:"shop",p:"Chcę to zwrócić.",            r:"htseh toh ZVROO-cheech",                a:"أريد إرجاع هذا.",              at:"ureed irja' hadha",                  e:"I want to return this.",        k:"zwrócić"},
+  {t:"shop",p:"Czy jest rabat?",             r:"chi yest RAH-bat",                     a:"هل يوجد خصم؟",                 at:"hal yujad khasm?",                   e:"Is there a discount?",          k:"rabat"},
+  {t:"shop",p:"Poproszę paragon.",           r:"poh-PROH-sheh pah-RAH-gon",            a:"الإيصال، من فضلك.",            at:"al-eesal, min fadlak",               e:"The receipt, please.",          k:"paragon"},
+  {t:"shop",p:"Otwieram o ósmej.",           r:"ot-VYE-ram oh OOS-mey",                a:"يفتح الساعة الثامنة.",          at:"yaftah al-sa'a al-thamina",          e:"It opens at eight.",            k:"otwieram"},
+  {t:"shop",p:"Sklep jest zamknięty.",       r:"sklep yest zam-KNYEH-ty",              a:"المتجر مغلق.",                 at:"al-matjar mughlaq",                  e:"The shop is closed.",           k:"zamknięty"},
+  {t:"shop",p:"Czy to jest w promocji?",     r:"chi toh yest v proh-MOH-tsyee",        a:"هل هذا في العرض؟",             at:"hal hadha fil-'ard?",                e:"Is this on sale?",              k:"promocja"},
+  {t:"shop",p:"Potrzebuję lekarstwa.",       r:"poh-tsheh-BOO-yeh le-KAR-stvah",       a:"أحتاج دواء.",                  at:"ahtaj dawa'",                        e:"I need medicine.",              k:"lekarstwo"},
+
+  // ── SOCIAL ─────────────────────────────────────────────────────────────────
+  {t:"social",p:"Skąd jesteś?",                    r:"skont YES-tesh",                          a:"من أين أنت؟",                    at:"min ayna anta?",                         e:"Where are you from?",                k:"skąd"},
+  {t:"social",p:"Jestem z Egiptu.",                r:"YES-tem z e-GZIP-too",                    a:"أنا من مصر.",                    at:"ana min misr",                           e:"I'm from Egypt.",                    k:"z Egiptu"},
+  {t:"social",p:"Miło mi cię poznać.",             r:"MEE-woh mee cheh POZ-nach",               a:"سعيد بلقائك.",                   at:"sa'eed biliqa'ik",                       e:"Nice to meet you.",                  k:"miło poznać"},
+  {t:"social",p:"Jak masz na imię?",               r:"yak mash nah EE-myeh",                    a:"ما اسمك؟",                       at:"ma ismuk?",                              e:"What is your name?",                 k:"imię"},
+  {t:"social",p:"Mam na imię Mohamed.",            r:"mam nah EE-myeh moh-HA-med",              a:"اسمي محمد.",                     at:"ismi Muhammad",                          e:"My name is Mohamed.",                k:"mam na imię"},
+  {t:"social",p:"Uczę się polskiego.",             r:"OO-cheh sheh pol-SKYE-go",                a:"أنا أتعلم البولندية.",            at:"ana ata'allam al-bulundiyya",            e:"I'm learning Polish.",               k:"uczę się"},
+  {t:"social",p:"Mój polski nie jest dobry.",      r:"mooy POL-skee nyeh yest DOH-bry",         a:"بولنديتي ليست جيدة.",            at:"bulundiyati laysat jayyida",             e:"My Polish is not good.",             k:"mój polski"},
+  {t:"social",p:"Czy możemy mówić po angielsku?",  r:"chi moh-ZHE-my MOO-vich poh an-GYEL-skoo",a:"هل يمكننا التحدث بالإنجليزية؟",  at:"hal yumkinuna al-tahadduth bil-ingleeziyya?", e:"Can we speak English?",           k:"angielsku"},
+  {t:"social",p:"Do zobaczenia.",                  r:"doh zoh-bah-CHE-nya",                     a:"إلى اللقاء.",                    at:"ila al-liqa'",                           e:"See you later.",                     k:"do zobaczenia"},
+  {t:"social",p:"Na zdrowie!",                     r:"nah ZDROH-vye",                           a:"في صحتك!",                       at:"fi sihhtak!",                            e:"Cheers! / Bless you!",               k:"na zdrowie"},
+  {t:"social",p:"Wszystkiego najlepszego.",        r:"vshistkye-go nay-LEP-she-go",             a:"كل التوفيق / عيد ميلاد سعيد.",  at:"kull al-tawfeeq / 'eed milad sa'eed",    e:"All the best / Happy birthday!",     k:"najlepszego"},
+  {t:"social",p:"To nie mój problem.",             r:"toh nyeh mooy PROH-blem",                 a:"هذه ليست مشكلتي.",               at:"hadhihi laysat mushkilati",              e:"That's not my problem.",             k:"problem"},
+  {t:"social",p:"Nie wiem.",                       r:"nyeh vyem",                               a:"لا أعرف.",                       at:"la a'rif",                               e:"I don't know.",                      k:"nie wiem"},
+  {t:"social",p:"Oczywiście.",                     r:"oh-chi-VEESH-chye",                       a:"بالطبع.",                         at:"bil-tab'",                               e:"Of course.",                         k:"oczywiście"},
+  {t:"social",p:"Może.",                           r:"MOH-zheh",                                a:"ربما.",                          at:"rubbama",                                e:"Maybe.",                             k:"może"},
+  {t:"social",p:"Ile masz lat?",                   r:"EE-leh mash lat",                         a:"كم عمرك؟",                       at:"kam 'umruk?",                            e:"How old are you?",                   k:"ile lat"},
+  {t:"social",p:"Mam trzydzieści dwa lata.",       r:"mam tshih-DJESH-chee dvah LAH-tah",       a:"عمري اثنان وثلاثون سنة.",        at:"'umri ithnan wa-thalathun sana",         e:"I am thirty-two years old.",         k:"lata"},
+  {t:"social",p:"Czy masz rodzeństwo?",            r:"chi mash roh-DJEN-stvoh",                 a:"هل لديك إخوة؟",                  at:"hal ladayk ikhwa?",                      e:"Do you have siblings?",              k:"rodzeństwo"},
+  {t:"social",p:"Mam jedną siostrę.",              r:"mam YED-noh SYOS-tsheh",                  a:"لدي أخت واحدة.",                 at:"ladayya ukht wahida",                    e:"I have one sister.",                 k:"siostra"},
+  {t:"social",p:"Praca mi się podoba.",            r:"PRAH-tsah mee sheh poh-DOH-bah",          a:"أنا أحب عملي.",                  at:"ana uhibb 'amali",                       e:"I like my work.",                    k:"podoba"},
+
+  // ── TIME ───────────────────────────────────────────────────────────────────
+  {t:"time",p:"Który mamy rok?",               r:"KTOO-ry MAH-my rok",                 a:"في أي سنة نحن؟",               at:"fi ayyi sana nahnu?",             e:"What year is it?",           k:"rok"},
+  {t:"time",p:"Który mamy dzień?",             r:"KTOO-ry MAH-my djen",                a:"أي يوم نحن فيه؟",              at:"ayyu yawm nahnu fih?",            e:"What day is it?",            k:"dzień"},
+  {t:"time",p:"Która godzina?",                r:"KTOO-rah goh-JEE-nah",               a:"كم الساعة؟",                   at:"kam al-sa'a?",                    e:"What time is it?",           k:"godzina"},
+  {t:"time",p:"Jest godzina trzecia.",         r:"yest goh-JEE-nah TSHE-chyah",        a:"الساعة الثالثة.",              at:"al-sa'a al-thalitha",             e:"It is three o'clock.",       k:"trzecia"},
+  {t:"time",p:"Dzisiaj jest poniedziałek.",    r:"djee-SHAY yest poh-nye-JA-wek",      a:"اليوم هو الإثنين.",            at:"al-yawm huwa al-ithnayn",         e:"Today is Monday.",           k:"poniedziałek"},
+  {t:"time",p:"Jutro jest wtorek.",            r:"YOO-troh yest VTOH-rek",              a:"غداً هو الثلاثاء.",            at:"ghadan huwa al-thulatha'",        e:"Tomorrow is Tuesday.",       k:"jutro"},
+  {t:"time",p:"Wczoraj był piątek.",           r:"VCHO-ray byw PYON-tek",               a:"أمس كان يوم الجمعة.",           at:"ams kana yawm al-jumu'a",         e:"Yesterday was Friday.",      k:"wczoraj"},
+  {t:"time",p:"W tym miesiącu.",               r:"v tym mye-SHON-tsoo",                 a:"في هذا الشهر.",                 at:"fi hadha al-shahr",               e:"This month.",                k:"miesiąc"},
+  {t:"time",p:"Za tydzień.",                   r:"zah TY-djen",                         a:"بعد أسبوع.",                   at:"ba'd usbu'",                      e:"In a week.",                 k:"tydzień"},
+  {t:"time",p:"Rano, po południu, wieczorem.", r:"RAH-noh, poh poh-WOO-dnyoo, vye-CHOH-rem", a:"صباحاً، بعد الظهر، مساءً.", at:"sabahan, ba'd al-zuhr, masa'an", e:"Morning, afternoon, evening.", k:"rano"},
+  {t:"time",p:"środa",      r:"SHRO-dah",        a:"الأربعاء", at:"al-arbi'a'",   e:"Wednesday",    k:"środa"},
+  {t:"time",p:"czwartek",   r:"CHVAR-tek",        a:"الخميس",   at:"al-khamis",    e:"Thursday",     k:"czwartek"},
+  {t:"time",p:"sobota",     r:"soh-BOH-tah",      a:"السبت",    at:"al-sabt",      e:"Saturday",     k:"sobota"},
+  {t:"time",p:"niedziela",  r:"nye-DJE-lah",      a:"الأحد",    at:"al-ahad",      e:"Sunday",       k:"niedziela"},
+  {t:"time",p:"poniedziałek",r:"poh-nye-JA-wek",  a:"الإثنين",  at:"al-ithnayn",   e:"Monday",       k:"poniedziałek"},
+  {t:"time",p:"wtorek",     r:"VTOH-rek",          a:"الثلاثاء", at:"al-thulatha'", e:"Tuesday",      k:"wtorek"},
+  {t:"time",p:"piątek",     r:"PYON-tek",          a:"الجمعة",   at:"al-jumu'a",    e:"Friday",       k:"piątek"},
+  {t:"time",p:"styczeń",    r:"STIH-chen",         a:"يناير",    at:"yanayir",      e:"January",      k:"styczeń"},
+  {t:"time",p:"luty",       r:"LOO-tih",           a:"فبراير",   at:"fibrayir",     e:"February",     k:"luty"},
+  {t:"time",p:"marzec",     r:"MAR-zets",          a:"مارس",     at:"maris",        e:"March",        k:"marzec"},
+  {t:"time",p:"kwiecień",   r:"KVYE-chen",         a:"أبريل",    at:"abril",        e:"April",        k:"kwiecień"},
+  {t:"time",p:"maj",        r:"my",                a:"مايو",     at:"mayo",         e:"May",          k:"maj"},
+  {t:"time",p:"czerwiec",   r:"CHER-vyets",        a:"يونيو",    at:"yunyu",        e:"June",         k:"czerwiec"},
+  {t:"time",p:"lipiec",     r:"LEE-pyets",         a:"يوليو",    at:"yulyu",        e:"July",         k:"lipiec"},
+  {t:"time",p:"sierpień",   r:"SHER-pyen",         a:"أغسطس",    at:"aghustu s",    e:"August",       k:"sierpień"},
+  {t:"time",p:"wrzesień",   r:"VJE-shen",          a:"سبتمبر",   at:"sibtambir",    e:"September",    k:"wrzesień"},
+  {t:"time",p:"październik",r:"paz-DJYER-neek",    a:"أكتوبر",   at:"uktubir",      e:"October",      k:"październik"},
+  {t:"time",p:"listopad",   r:"lees-TOH-pat",      a:"نوفمبر",   at:"nufambir",     e:"November",     k:"listopad"},
+  {t:"time",p:"grudzień",   r:"GROO-djen",         a:"ديسمبر",   at:"disambir",     e:"December",     k:"grudzień"},
+  {t:"time",p:"wiosna",     r:"VYOS-nah",          a:"ربيع",     at:"rabi'",        e:"spring",       k:"wiosna"},
+  {t:"time",p:"lato",       r:"LAH-toh",           a:"صيف",      at:"sayf",         e:"summer",       k:"lato"},
+  {t:"time",p:"jesień",     r:"YE-shen",           a:"خريف",     at:"kharif",       e:"autumn / fall",k:"jesień"},
+  {t:"time",p:"zima",       r:"ZEE-mah",           a:"شتاء",     at:"shita'",       e:"winter",       k:"zima"},
+  {t:"time",p:"dziś / dzisiaj",r:"djeesh / djee-SHAY",a:"اليوم", at:"al-yawm",      e:"today",        k:"dziś"},
+  {t:"time",p:"jutro",      r:"YOO-troh",          a:"غداً",     at:"ghadan",       e:"tomorrow",     k:"jutro"},
+  {t:"time",p:"wczoraj",    r:"VCHO-ray",          a:"أمس",      at:"ams",          e:"yesterday",    k:"wczoraj"},
+  {t:"time",p:"teraz",      r:"TE-ras",            a:"الآن",     at:"al-an",        e:"now",          k:"teraz"},
+  {t:"time",p:"później",    r:"POOZH-nyey",        a:"لاحقاً",   at:"lahiqan",      e:"later",        k:"później"},
+
+  // ── WORK ───────────────────────────────────────────────────────────────────
+  {t:"work",p:"Gdzie pracujesz?",             r:"gdye prah-TSOO-yesh",                  a:"أين تعمل؟",               at:"ayna ta'mal?",                   e:"Where do you work?",          k:"pracujesz"},
+  {t:"work",p:"Pracuję w biurze.",            r:"prah-TSOO-yeh v BYOO-zheh",             a:"أعمل في مكتب.",            at:"a'mal fi maktab",                e:"I work in an office.",        k:"biuro"},
+  {t:"work",p:"Jestem inżynierem.",           r:"YES-tem in-zhih-NYE-rem",               a:"أنا مهندس.",              at:"ana muhandis",                   e:"I am an engineer.",           k:"inżynier"},
+  {t:"work",p:"O której zaczyna się praca?", r:"oh KTOO-rey zah-CHIH-nah sheh PRAH-tsah",a:"في أي ساعة تبدأ العمل؟",  at:"fi ayyi sa'a tabda' al-'amal?", e:"What time does work start?",  k:"zaczyna"},
+  {t:"work",p:"Mam spotkanie.",               r:"mam spot-KAH-nye",                     a:"لدي اجتماع.",             at:"ladayya ijtima'",                e:"I have a meeting.",           k:"spotkanie"},
+  {t:"work",p:"Wyślę maila.",                 r:"VY-shleh MY-lah",                      a:"سأرسل بريداً إلكترونياً.",  at:"sa'ursil baridan iliktruniyyan", e:"I will send an email.",       k:"mail"},
+  {t:"work",p:"Proszę zadzwonić później.",    r:"PROH-sheh zad-ZVOH-neech POOZH-nyey",  a:"من فضلك اتصل لاحقاً.",     at:"min fadlak ittasil lahiqan",     e:"Please call later.",          k:"zadzwonić"},
+
+  // ── HEALTH ─────────────────────────────────────────────────────────────────
+  {t:"health",p:"Źle się czuję.",              r:"zhle sheh CHOO-yeh",                  a:"أنا لا أشعر بخير.",            at:"ana la ash'ur bikhair",       e:"I don't feel well.",            k:"źle"},
+  {t:"health",p:"Boli mnie głowa.",            r:"BOH-lee mnyeh GWOH-vah",              a:"رأسي يؤلمني.",                 at:"ra'si yu'limuni",             e:"My head hurts.",                k:"głowa"},
+  {t:"health",p:"Boli mnie gardło.",           r:"BOH-lee mnyeh GAR-dwoh",              a:"حلقي يؤلمني.",                 at:"halqi yu'limuni",             e:"My throat hurts.",              k:"gardło"},
+  {t:"health",p:"Mam gorączkę.",               r:"mam goh-RONCH-keh",                   a:"عندي حمى.",                    at:"'indi humma",                 e:"I have a fever.",               k:"gorączka"},
+  {t:"health",p:"Potrzebuję lekarza.",         r:"poh-tsheh-BOO-yeh le-KAH-zhah",       a:"أحتاج طبيباً.",                at:"ahtaj tabiban",               e:"I need a doctor.",              k:"lekarz"},
+  {t:"health",p:"Gdzie jest szpital?",         r:"gdye yest SHPEE-tal",                 a:"أين المستشفى؟",                at:"ayna al-mustashfa?",          e:"Where is the hospital?",        k:"szpital"},
+  {t:"health",p:"Jestem uczulony na penicylinę.",r:"YES-tem oo-choo-LOH-ny nah pe-nee-tsih-LIH-neh",a:"أنا حساس للبنسلين.",at:"ana hassas lil-binsilin",   e:"I'm allergic to penicillin.",   k:"uczulony"},
+  {t:"health",p:"Proszę zadzwonić po karetkę.",r:"PROH-sheh zad-ZVOH-neech poh kah-RET-keh",a:"اتصل بالإسعاف، من فضلك.",at:"ittasil bil-is'af, min fadlak",e:"Please call an ambulance.",     k:"karetka"},
+  {t:"health",p:"Mam kaszel.",                 r:"mam KAH-shel",                        a:"عندي سعال.",                   at:"'indi su'al",                 e:"I have a cough.",               k:"kaszel"},
+
+  // ── HOME ───────────────────────────────────────────────────────────────────
+  {t:"home",p:"Szukam mieszkania do wynajęcia.",r:"SHOO-kam myesh-KAH-nya doh vy-nah-YEN-chyah",a:"أبحث عن شقة للإيجار.",  at:"abhath 'an shaqqa lil-eejar",  e:"I'm looking for an apartment to rent.", k:"wynajęcie"},
+  {t:"home",p:"Ile wynosi czynsz?",             r:"EE-leh vy-NOH-see CHYNSH",                   a:"كم الإيجار؟",           at:"kam al-eejar?",                e:"How much is the rent?",                 k:"czynsz"},
+  {t:"home",p:"Czy media są wliczone?",         r:"chi ME-dyah sohn vlee-CHOH-neh",             a:"هل المرافق مشمولة؟",    at:"hal al-marafiq mashmula?",     e:"Are utilities included?",               k:"media"},
+  {t:"home",p:"Gdzie jest klucz zapasowy?",     r:"gdye yest klooch zah-pah-SOH-vy",            a:"أين المفتاح الاحتياطي؟",at:"ayna al-miftah al-ihtiyati?",  e:"Where is the spare key?",               k:"klucz zapasowy"},
+  {t:"home",p:"Śmietnik jest na dole.",         r:"SHMYET-neek yest nah DOH-leh",               a:"الحاوية في الطابق الأرضي.",at:"al-hawiya fil-tabiq al-ardi", e:"The bin is downstairs.",                k:"śmietnik"},
+  {t:"home",p:"Ogrzewanie nie działa.",         r:"oh-gzheh-VAH-nye nyeh DJA-wah",              a:"التدفئة لا تعمل.",       at:"al-tadfi'a la ta'mal",         e:"The heating doesn't work.",             k:"ogrzewanie"},
+
+  // ── NUMBERS ────────────────────────────────────────────────────────────────
+  {t:"numbers",p:"zero",           r:"ZE-roh",                 a:"صفر",    at:"sifr",              e:"zero",              k:"zero"},
+  {t:"numbers",p:"jeden",          r:"YEH-den",                a:"واحد",   at:"wahid",             e:"one",               k:"jeden"},
+  {t:"numbers",p:"dwa",            r:"dvah",                   a:"اثنان",  at:"ithnan",            e:"two",               k:"dwa"},
+  {t:"numbers",p:"trzy",           r:"tshih",                  a:"ثلاثة",  at:"thalatha",          e:"three",             k:"trzy"},
+  {t:"numbers",p:"cztery",         r:"CHTE-rih",               a:"أربعة",  at:"arba'a",            e:"four",              k:"cztery"},
+  {t:"numbers",p:"pięć",           r:"pyench",                 a:"خمسة",   at:"khamsa",            e:"five",              k:"pięć"},
+  {t:"numbers",p:"sześć",          r:"sheshch",                a:"ستة",    at:"sitta",             e:"six",               k:"sześć"},
+  {t:"numbers",p:"siedem",         r:"SHYE-dem",               a:"سبعة",   at:"sab'a",             e:"seven",             k:"siedem"},
+  {t:"numbers",p:"osiem",          r:"OH-shem",                a:"ثمانية", at:"thamaniya",         e:"eight",             k:"osiem"},
+  {t:"numbers",p:"dziewięć",       r:"DJE-vyench",             a:"تسعة",   at:"tis'a",             e:"nine",              k:"dziewięć"},
+  {t:"numbers",p:"dziesięć",       r:"DJE-shench",             a:"عشرة",   at:"'ashara",           e:"ten",               k:"dziesięć"},
+  {t:"numbers",p:"jedenaście",     r:"ye-de-NASH-chye",        a:"أحد عشر",at:"ahad 'ashar",       e:"eleven",            k:"jedenaście"},
+  {t:"numbers",p:"dwanaście",      r:"dva-NASH-chye",          a:"اثنا عشر",at:"ithna 'ashar",     e:"twelve",            k:"dwanaście"},
+  {t:"numbers",p:"trzynaście",     r:"tshih-NASH-chye",        a:"ثلاثة عشر",at:"thalatha 'ashar", e:"thirteen",          k:"trzynaście"},
+  {t:"numbers",p:"czternaście",    r:"chter-NASH-chye",        a:"أربعة عشر",at:"arba'a 'ashar",   e:"fourteen",          k:"czternaście"},
+  {t:"numbers",p:"piętnaście",     r:"pyent-NASH-chye",        a:"خمسة عشر",at:"khamsa 'ashar",    e:"fifteen",           k:"piętnaście"},
+  {t:"numbers",p:"szesnaście",     r:"shes-NASH-chye",         a:"ستة عشر", at:"sitta 'ashar",     e:"sixteen",           k:"szesnaście"},
+  {t:"numbers",p:"siedemnaście",   r:"shye-dem-NASH-chye",     a:"سبعة عشر",at:"sab'a 'ashar",     e:"seventeen",         k:"siedemnaście"},
+  {t:"numbers",p:"osiemnaście",    r:"oh-shem-NASH-chye",      a:"ثمانية عشر",at:"thamaniya 'ashar",e:"eighteen",         k:"osiemnaście"},
+  {t:"numbers",p:"dziewiętnaście", r:"djye-vyent-NASH-chye",   a:"تسعة عشر",at:"tis'a 'ashar",     e:"nineteen",          k:"dziewiętnaście"},
+  {t:"numbers",p:"dwadzieścia",    r:"dva-DJESH-chyah",        a:"عشرون",  at:"'ishrun",           e:"twenty",            k:"dwadzieścia"},
+  {t:"numbers",p:"trzydzieści",    r:"tshih-DJESH-chee",       a:"ثلاثون", at:"thalathun",         e:"thirty",            k:"trzydzieści"},
+  {t:"numbers",p:"czterdzieści",   r:"chter-DJESH-chee",       a:"أربعون", at:"arba'un",           e:"forty",             k:"czterdzieści"},
+  {t:"numbers",p:"pięćdziesiąt",   r:"pyench-DJE-shont",       a:"خمسون",  at:"khamsun",           e:"fifty",             k:"pięćdziesiąt"},
+  {t:"numbers",p:"sto",            r:"stoh",                   a:"مئة",    at:"mi'a",              e:"one hundred",       k:"sto"},
+  {t:"numbers",p:"tysiąc",         r:"TIH-shonts",             a:"ألف",    at:"alf",               e:"one thousand",      k:"tysiąc"},
+  {t:"numbers",p:"Mam trzydzieści lat.",     r:"mam tshih-DJESH-chee lat",       a:"عمري ثلاثون سنة.",     at:"'umri thalathun sana",      e:"I am thirty years old.",        k:"trzydzieści"},
+  {t:"numbers",p:"Poproszę dwa.",            r:"poh-PROH-sheh dvah",             a:"اثنين، من فضلك.",      at:"ithnayn, min fadlak",        e:"Two, please.",                  k:"dwa"},
+  {t:"numbers",p:"Na pierwszym piętrze.",    r:"nah PYERV-shym PYEN-tsheh",      a:"في الطابق الأول.",     at:"fil-tabiq al-awwal",         e:"On the first floor.",           k:"piętro"},
+  {t:"numbers",p:"Mój numer telefonu to...", r:"mooy NOO-mer te-le-FOH-noo toh", a:"رقم هاتفي هو...",      at:"raqm hatifi huwa...",        e:"My phone number is...",         k:"numer telefonu"},
+  {t:"numbers",p:"To kosztuje sto złotych.", r:"toh kosh-TOO-yeh stoh ZWOH-tih", a:"هذا يكلف مئة زلوتي.",  at:"hadha yukallifu mi'at zloti", e:"This costs one hundred złoty.", k:"sto złotych"},
+
+  // ── WEATHER ────────────────────────────────────────────────────────────────
+  {t:"weather",p:"Jaka jest pogoda?",    r:"YAH-kah yest poh-GOH-dah",         a:"كيف الطقس؟",             at:"kayfa al-taqs?",              e:"What is the weather like?",    k:"pogoda"},
+  {t:"weather",p:"Pada deszcz.",         r:"PAH-dah deshch",                    a:"المطر ينزل.",             at:"al-matar yanzil",             e:"It's raining.",                k:"deszcz"},
+  {t:"weather",p:"Jest słonecznie.",     r:"yest swoh-NECH-nye",                a:"الجو مشمس.",              at:"al-jaww mushmis",             e:"It's sunny.",                  k:"słonecznie"},
+  {t:"weather",p:"Jest bardzo zimno.",   r:"yest BAR-dzoh ZEEM-noh",            a:"الجو بارد جداً.",         at:"al-jaww barid jiddan",        e:"It's very cold.",              k:"zimno"},
+  {t:"weather",p:"Weź parasol.",         r:"vezh pah-RAH-sol",                  a:"خذ المظلة.",               at:"khudh al-mizalla",            e:"Take an umbrella.",            k:"parasol"},
+  {t:"weather",p:"Jest pochmurno.",      r:"yest poh-HMOOR-noh",                a:"الجو غائم.",              at:"al-jaww gha'im",              e:"It's cloudy.",                 k:"pochmurno"},
+  {t:"weather",p:"Wieje wiatr.",         r:"VYE-ye VYATR",                      a:"الريح تهب.",               at:"al-rih tahub",                e:"The wind is blowing.",         k:"wiatr"},
+  {t:"weather",p:"Pada śnieg.",          r:"PAH-dah shnyeg",                    a:"الثلج ينزل.",              at:"al-thalj yanzil",             e:"It's snowing.",                k:"śnieg"},
+  {t:"weather",p:"Jest ciepło.",         r:"yest CHYEP-woh",                    a:"الجو دافئ.",               at:"al-jaww dafi'",               e:"It's warm.",                   k:"ciepło"},
+  {t:"weather",p:"Jaka temperatura?",   r:"YAH-kah tem-pe-RAH-too-rah",        a:"كم درجة الحرارة؟",         at:"kam darajat al-harara?",      e:"What is the temperature?",     k:"temperatura"},
+
+  // ── COLORS ─────────────────────────────────────────────────────────────────
+  {t:"colors",p:"czerwony",     r:"cher-VOH-nih",         a:"أحمر",         at:"ahmar",        e:"red",         k:"czerwony"},
+  {t:"colors",p:"niebieski",    r:"nye-BYES-kee",         a:"أزرق",         at:"azraq",        e:"blue",        k:"niebieski"},
+  {t:"colors",p:"zielony",      r:"zhe-LOH-nih",          a:"أخضر",         at:"akhdar",       e:"green",       k:"zielony"},
+  {t:"colors",p:"żółty",        r:"ZHOOL-tih",            a:"أصفر",         at:"asfar",        e:"yellow",      k:"żółty"},
+  {t:"colors",p:"czarny",       r:"CHAR-nih",             a:"أسود",         at:"aswad",        e:"black",       k:"czarny"},
+  {t:"colors",p:"biały",        r:"BYAH-wih",             a:"أبيض",         at:"abyad",        e:"white",       k:"biały"},
+  {t:"colors",p:"szary",        r:"SHA-rih",              a:"رمادي",        at:"ramadi",       e:"grey",        k:"szary"},
+  {t:"colors",p:"brązowy",      r:"bron-ZOH-vih",         a:"بني",          at:"bunni",        e:"brown",       k:"brązowy"},
+  {t:"colors",p:"różowy",       r:"roo-ZHOH-vih",         a:"وردي",         at:"wardi",        e:"pink",        k:"różowy"},
+  {t:"colors",p:"pomarańczowy", r:"poh-mah-ron-CHOH-vih", a:"برتقالي",      at:"burtuqali",    e:"orange",      k:"pomarańczowy"},
+  {t:"colors",p:"fioletowy",    r:"fyo-le-TOH-vih",       a:"بنفسجي",       at:"banafsaji",    e:"purple",      k:"fioletowy"},
+  {t:"colors",p:"Jaki to kolor?",r:"YAH-kee toh KOH-lor", a:"ما هذا اللون؟",at:"ma hadha al-lawn?",e:"What color is this?",k:"kolor"},
+
+  // ── FAMILY ─────────────────────────────────────────────────────────────────
+  {t:"family",p:"mama",     r:"MAH-mah",     a:"ماما",       at:"mama",          e:"mom",           k:"mama"},
+  {t:"family",p:"tata",     r:"TAH-tah",     a:"بابا",       at:"baba",          e:"dad",           k:"tata"},
+  {t:"family",p:"matka",    r:"MAT-kah",     a:"أم",         at:"umm",           e:"mother",        k:"matka"},
+  {t:"family",p:"ojciec",   r:"OY-chyets",   a:"أب",         at:"ab",            e:"father",        k:"ojciec"},
+  {t:"family",p:"brat",     r:"braht",       a:"أخ",         at:"akh",           e:"brother",       k:"brat"},
+  {t:"family",p:"siostra",  r:"SYOS-trah",   a:"أخت",        at:"ukht",          e:"sister",        k:"siostra"},
+  {t:"family",p:"syn",      r:"sihn",        a:"ابن",        at:"ibn",           e:"son",           k:"syn"},
+  {t:"family",p:"córka",    r:"TSOOR-kah",   a:"ابنة",       at:"ibna",          e:"daughter",      k:"córka"},
+  {t:"family",p:"dziadek",  r:"DJAH-dek",    a:"جد",         at:"jadd",          e:"grandfather",   k:"dziadek"},
+  {t:"family",p:"babcia",   r:"BAB-chyah",   a:"جدة",        at:"jadda",         e:"grandmother",   k:"babcia"},
+  {t:"family",p:"mąż",      r:"monzh",       a:"زوج",        at:"zawj",          e:"husband",       k:"mąż"},
+  {t:"family",p:"żona",     r:"ZHOH-nah",    a:"زوجة",       at:"zawja",         e:"wife",          k:"żona"},
+  {t:"family",p:"dziecko",  r:"DJETS-koh",   a:"طفل",        at:"tifl",          e:"child",         k:"dziecko"},
+  {t:"family",p:"wujek",    r:"VOO-yek",     a:"عم / خال",   at:"'amm / khal",   e:"uncle",         k:"wujek"},
+  {t:"family",p:"ciocia",   r:"CHYO-chyah",  a:"عمة / خالة", at:"'amma / khala", e:"aunt",          k:"ciocia"},
+  {t:"family",p:"rodzina",  r:"roh-DJEE-nah",a:"عائلة",      at:"'a'ila",        e:"family",        k:"rodzina"},
+
+  // ── VERBS ──────────────────────────────────────────────────────────────────
+  {t:"verbs",p:"Jestem...",    r:"YES-tem",         a:"أنا...",          at:"ana...",           e:"I am...",           k:"jestem"},
+  {t:"verbs",p:"Mam...",       r:"mam",             a:"لدي... / عندي...",at:"ladayya... / 'indi...",e:"I have...",      k:"mam"},
+  {t:"verbs",p:"Chcę...",      r:"htseh",           a:"أريد...",         at:"ureed...",         e:"I want...",         k:"chcę"},
+  {t:"verbs",p:"Mogę...",      r:"MOH-geh",         a:"أستطيع...",       at:"astati'...",       e:"I can...",          k:"mogę"},
+  {t:"verbs",p:"Idę...",       r:"EE-deh",          a:"أذهب...",         at:"adhhab...",        e:"I go...",           k:"idę"},
+  {t:"verbs",p:"Jadę...",      r:"YAH-deh",         a:"أسافر / أركب...", at:"usafir / arkab...",e:"I travel / ride...",k:"jadę"},
+  {t:"verbs",p:"Jem...",       r:"yem",             a:"آكل...",          at:"akul...",          e:"I eat...",          k:"jem"},
+  {t:"verbs",p:"Piję...",      r:"PEE-yeh",         a:"أشرب...",         at:"ashrab...",        e:"I drink...",        k:"piję"},
+  {t:"verbs",p:"Lubię...",     r:"LOO-byeh",        a:"أحب...",          at:"uhibb...",         e:"I like...",         k:"lubię"},
+  {t:"verbs",p:"Wiem...",      r:"vyem",            a:"أعرف...",         at:"a'rif...",         e:"I know...",         k:"wiem"},
+  {t:"verbs",p:"Czytam...",    r:"CHIH-tam",        a:"أقرأ...",         at:"aqra'...",         e:"I read...",         k:"czytam"},
+  {t:"verbs",p:"Piszę...",     r:"PEE-sheh",        a:"أكتب...",         at:"aktub...",         e:"I write...",        k:"piszę"},
+  {t:"verbs",p:"Słucham...",   r:"SWOO-kham",       a:"أستمع...",        at:"astami'...",       e:"I listen...",       k:"słucham"},
+  {t:"verbs",p:"Mówię...",     r:"MOO-vyeh",        a:"أتكلم...",        at:"atakallam...",     e:"I speak...",        k:"mówię"},
+  {t:"verbs",p:"Widzę...",     r:"VEE-dzeh",        a:"أرى...",          at:"ara...",           e:"I see...",          k:"widzę"},
+  {t:"verbs",p:"Śpię.",        r:"shpyeh",          a:"أنام.",           at:"anam",             e:"I sleep.",          k:"śpię"},
+  {t:"verbs",p:"Pracuję...",   r:"prah-TSOO-yeh",   a:"أعمل...",         at:"a'mal...",         e:"I work...",         k:"pracuję"},
+  {t:"verbs",p:"Mieszkam w...",r:"myesh-KAM v",     a:"أسكن في...",      at:"askun fi...",      e:"I live in...",      k:"mieszkam"},
+  {t:"verbs",p:"Uczę się...",  r:"OO-cheh sheh",    a:"أتعلم...",        at:"ata'allam...",     e:"I learn...",        k:"uczę się"},
+  {t:"verbs",p:"Rozumiem...",  r:"roh-ZOO-myem",    a:"أفهم...",         at:"afham...",         e:"I understand...",   k:"rozumiem"},
+  {t:"verbs",p:"Oglądam...",   r:"oh-GLON-dam",     a:"أشاهد...",        at:"ushahid...",       e:"I watch...",        k:"oglądam"},
+  {t:"verbs",p:"Daję...",      r:"DAH-yeh",         a:"أعطي...",         at:"u'ti...",          e:"I give...",         k:"daję"},
+  {t:"verbs",p:"Biorę...",     r:"BYOH-reh",        a:"آخذ...",          at:"akhudh...",        e:"I take...",         k:"biorę"},
+
+  // ── PLACES ─────────────────────────────────────────────────────────────────
+  {t:"places",p:"dom",         r:"dom",              a:"منزل / بيت",          at:"manzil / bayt",          e:"house / home",      k:"dom"},
+  {t:"places",p:"szkoła",      r:"SHKOH-wah",        a:"مدرسة",               at:"madrasa",                e:"school",            k:"szkoła"},
+  {t:"places",p:"sklep",       r:"sklep",            a:"متجر",                at:"matjar",                 e:"shop / store",      k:"sklep"},
+  {t:"places",p:"restauracja", r:"res-tow-RATS-yah", a:"مطعم",                at:"mat'am",                 e:"restaurant",        k:"restauracja"},
+  {t:"places",p:"bank",        r:"bank",             a:"بنك",                 at:"bank",                   e:"bank",              k:"bank"},
+  {t:"places",p:"poczta",      r:"POCH-tah",         a:"مكتب البريد",         at:"maktab al-barid",        e:"post office",       k:"poczta"},
+  {t:"places",p:"park",        r:"park",             a:"حديقة عامة",          at:"hadiqa 'amma",           e:"park",              k:"park"},
+  {t:"places",p:"ulica",       r:"OO-lee-tsah",      a:"شارع",                at:"shari'",                 e:"street",            k:"ulica"},
+  {t:"places",p:"miasto",      r:"MYAS-toh",         a:"مدينة",               at:"madina",                 e:"city",              k:"miasto"},
+  {t:"places",p:"wieś",        r:"vyesh",            a:"قرية",                at:"qarya",                  e:"village",           k:"wieś"},
+  {t:"places",p:"kraj",        r:"kry",              a:"بلد / دولة",          at:"balad / dawla",          e:"country",           k:"kraj"},
+  {t:"places",p:"hotel",       r:"HOH-tel",          a:"فندق",                at:"funduq",                 e:"hotel",             k:"hotel"},
+  {t:"places",p:"lotnisko",    r:"lot-NEES-koh",     a:"مطار",                at:"matar",                  e:"airport",           k:"lotnisko"},
+  {t:"places",p:"dworzec",     r:"DVOR-zets",        a:"محطة القطار",         at:"mahatta al-qitar",       e:"train station",     k:"dworzec"},
+  {t:"places",p:"kościół",     r:"kosh-CHOOL",       a:"كنيسة",               at:"kanisa",                 e:"church",            k:"kościół"},
+  {t:"places",p:"meczet",      r:"ME-chet",          a:"مسجد",                at:"masjid",                 e:"mosque",            k:"meczet"},
+  {t:"places",p:"rynek",       r:"RIH-nek",          a:"سوق / ساحة المدينة",  at:"suq / sahat al-madina",  e:"market square",     k:"rynek"},
+  {t:"places",p:"centrum",     r:"TSEN-troom",       a:"وسط المدينة",         at:"wust al-madina",         e:"city center",       k:"centrum"},
+  {t:"places",p:"szpital",     r:"SHPEE-tal",        a:"مستشفى",              at:"mustashfa",              e:"hospital",          k:"szpital"},
+  {t:"places",p:"apteka",      r:"ap-TEH-kah",       a:"صيدلية",              at:"saydaliyya",             e:"pharmacy",          k:"apteka"},
+  {t:"places",p:"biblioteka",  r:"bee-blyoh-TEH-kah",a:"مكتبة",               at:"maktaba",                e:"library",           k:"biblioteka"},
+  {t:"places",p:"kino",        r:"KEE-noh",          a:"سينما",               at:"sinima",                 e:"cinema",            k:"kino"},
+
+  // ── BODY ───────────────────────────────────────────────────────────────────
+  {t:"body",p:"głowa",  r:"GWOH-vah",  a:"رأس",       at:"ra's",         e:"head",           k:"głowa"},
+  {t:"body",p:"ręka",   r:"REN-kah",   a:"يد / ذراع", at:"yad / dhira'", e:"hand / arm",     k:"ręka"},
+  {t:"body",p:"noga",   r:"NOH-gah",   a:"ساق / قدم", at:"saq / qadam",  e:"leg / foot",     k:"noga"},
+  {t:"body",p:"oko",    r:"OH-koh",    a:"عين",        at:"'ayn",         e:"eye",            k:"oko"},
+  {t:"body",p:"ucho",   r:"OO-khoh",   a:"أذن",        at:"udhun",        e:"ear",            k:"ucho"},
+  {t:"body",p:"nos",    r:"nos",       a:"أنف",        at:"anf",          e:"nose",           k:"nos"},
+  {t:"body",p:"usta",   r:"OOS-tah",   a:"فم",         at:"famm",         e:"mouth",          k:"usta"},
+  {t:"body",p:"plecy",  r:"PLE-tsih",  a:"ظهر",        at:"zahr",         e:"back",           k:"plecy"},
+  {t:"body",p:"brzuch", r:"bjooh",     a:"بطن",        at:"batn",         e:"stomach / belly",k:"brzuch"},
+  {t:"body",p:"serce",  r:"SER-tse",   a:"قلب",        at:"qalb",         e:"heart",          k:"serce"},
+  {t:"body",p:"twarz",  r:"tvarsh",    a:"وجه",        at:"wajh",         e:"face",           k:"twarz"},
+  {t:"body",p:"palec",  r:"PAH-lets",  a:"إصبع",       at:"isba'",        e:"finger",         k:"palec"},
+  {t:"body",p:"ząb",    r:"zomp",      a:"سن / ضرس",   at:"sinn / dars",  e:"tooth",          k:"ząb"},
+  {t:"body",p:"włosy",  r:"VWOH-sih",  a:"شعر",        at:"sha'r",        e:"hair",           k:"włosy"},
+];
+
+/* =====================================================================
+   SEED LOGIC
+   ===================================================================== */
+let dbInstance = null;
+
+function getConfig() {
+  const apiKey             = document.getElementById("apiKey").value.trim();
+  const projectId          = document.getElementById("projectId").value.trim();
+  const appId              = document.getElementById("appId").value.trim();
+  const messagingSenderId  = document.getElementById("messagingSenderId").value.trim();
+
+  if (!apiKey || !projectId || !appId) {
+    log("❌ Fill in API Key, Project ID and App ID.", "err");
+    return null;
+  }
+
+  return {
+    apiKey,
+    authDomain:        `${projectId}.firebaseapp.com`,
+    projectId,
+    storageBucket:     `${projectId}.firebasestorage.app`,
+    messagingSenderId: messagingSenderId || "0",
+    appId,
+  };
+}
+
+function getOrInitDB() {
+  const cfg = getConfig();
+  if (!cfg) { log("❌ Fill in API Key, Project ID and App ID first.", "err"); return null; }
+  if (!dbInstance) {
+    try {
+      const apps = firebase.apps;
+      if (apps.length) firebase.app().delete().catch(()=>{});
+      firebase.initializeApp(cfg, "seeder-" + Date.now());
+      dbInstance = firebase.firestore(firebase.app(firebase.apps[firebase.apps.length - 1].name));
+    } catch(e) {
+      log("❌ Firebase init error: " + e.message, "err");
+      return null;
+    }
+  }
+  return dbInstance;
+}
+
+function log(msg, cls="info") {
+  const el = document.getElementById("log");
+  el.innerHTML += `<div class="${cls}">${msg}</div>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+function setProgress(pct) {
+  document.getElementById("progressBar").style.width = pct + "%";
+}
+
+async function startSeed() {
+  const db = getOrInitDB();
+  if (!db) return;
+
+  document.getElementById("seedBtn").disabled  = true;
+  document.getElementById("clearBtn").disabled = true;
+  document.getElementById("progressWrap").style.display = "block";
+  document.getElementById("summary").style.display = "none";
+  document.getElementById("log").innerHTML = "";
+  setProgress(0);
+
+  try {
+    log("Connecting to Firestore...", "info");
+    setProgress(5);
+
+    // Upload themes
+    log(`Uploading ${themesData.length} themes...`, "info");
+    const BATCH_LIMIT = 490; // Firestore max is 500 ops per batch
+    let batch = db.batch();
+    let ops = 0;
+    for (const theme of themesData) {
+      batch.set(db.collection("themes").doc(theme.id), theme);
+      ops++;
+    }
+    await batch.commit();
+    log("✓ Themes uploaded.", "ok");
+    setProgress(20);
+
+    // Upload vocabulary in batches of 490
+    log(`Uploading ${vocabularyData.length} vocabulary items...`, "info");
+    let done = 0;
+    while (done < vocabularyData.length) {
+      const slice = vocabularyData.slice(done, done + BATCH_LIMIT);
+      const vBatch = db.batch();
+      slice.forEach(item => {
+        vBatch.set(db.collection("vocabulary").doc(), item);
+      });
+      await vBatch.commit();
+      done += slice.length;
+      setProgress(20 + Math.round((done / vocabularyData.length) * 78));
+      log(`  ✓ ${done} / ${vocabularyData.length} items`, "ok");
+    }
+
+    setProgress(100);
+    log(`\n🎉 Done! Uploaded ${vocabularyData.length} words across ${themesData.length} themes.`, "ok");
+
+    const sum = document.getElementById("summary");
+    sum.style.display = "block";
+    sum.className = "summary success";
+    sum.innerHTML = `
+      ✅ Firestore seeded successfully!<br>
+      ${vocabularyData.length} vocabulary items &amp; ${themesData.length} themes.<br><br>
+      You can now open <strong>index.html</strong> — it will load from Firestore.
+      <br><br>
+      <strong>Remember to lock your Firestore rules back:</strong><br>
+      <code style="font-size:11px">allow write: if false;</code>
+    `;
+  } catch (err) {
+    log("❌ Error: " + err.message, "err");
+    if (err.message.includes("PERMISSION_DENIED") || err.message.includes("permission")) {
+      log("→ Set Firestore rules to allow writes first (see yellow box above).", "warn");
+    }
+    const sum = document.getElementById("summary");
+    sum.style.display = "block";
+    sum.className = "summary failure";
+    sum.textContent = "Upload failed: " + err.message;
+  } finally {
+    document.getElementById("seedBtn").disabled  = false;
+    document.getElementById("clearBtn").disabled = false;
+  }
+}
+
+async function startClear() {
+  if (!confirm("This will DELETE all documents in /vocabulary and /themes. Continue?")) return;
+  const db = getOrInitDB();
+  if (!db) return;
+
+  document.getElementById("seedBtn").disabled  = true;
+  document.getElementById("clearBtn").disabled = true;
+  document.getElementById("progressWrap").style.display = "block";
+  document.getElementById("log").innerHTML = "";
+  document.getElementById("summary").style.display = "none";
+  setProgress(10);
+
+  async function deleteCollection(colName) {
+    log(`Clearing /${colName}...`, "info");
+    const snap = await db.collection(colName).get();
+    const BATCH_LIMIT = 490;
+    let deleted = 0;
+    while (deleted < snap.docs.length) {
+      const batch = db.batch();
+      snap.docs.slice(deleted, deleted + BATCH_LIMIT).forEach(d => batch.delete(d.ref));
+      await batch.commit();
+      deleted += BATCH_LIMIT;
+    }
+    log(`✓ /${colName} cleared (${snap.docs.length} docs).`, "ok");
+  }
+
+  try {
+    await deleteCollection("vocabulary");
+    setProgress(60);
+    await deleteCollection("themes");
+    setProgress(100);
+    log("✓ Firestore cleared.", "ok");
+    const sum = document.getElementById("summary");
+    sum.style.display = "block";
+    sum.className = "summary success";
+    sum.textContent = "Firestore cleared. You can now upload fresh data.";
+  } catch (err) {
+    log("❌ Error: " + err.message, "err");
+  } finally {
+    document.getElementById("seedBtn").disabled  = false;
+    document.getElementById("clearBtn").disabled = false;
+  }
+}
+</script>
+</body>
+</html>
