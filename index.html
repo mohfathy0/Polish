@@ -689,7 +689,9 @@ function addSwipe(el,onLeft,onRight,onTap){
     const dx=e.changedTouches[0].clientX-sx;
     const dy=e.changedTouches[0].clientY-sy;
     if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>40){dx<0?onLeft():onRight();}
-    else if(Math.abs(dx)<10&&Math.abs(dy)<10){onTap();}
+    else if(Math.abs(dx)<10&&Math.abs(dy)<10){
+      if(!e.target.closest("button")) onTap();
+    }
   });
 }
 
@@ -702,7 +704,7 @@ function addSwipe(el,onLeft,onRight,onTap){
   document.getElementById("loadingOverlay").classList.add("hidden");
   deck1=[...all]; deck2=[...all]; spellDeck=shuffle([...all]);
   buildTabs1();buildTabs2();buildTabs3();
-  render1();render2();
+  render1();render2();renderSpell();
   addSwipe(document.getElementById("scene1"),next1,prev1,flip1);
   addSwipe(document.getElementById("scene2"),next2,prev2,flip2);
   initTTS();
