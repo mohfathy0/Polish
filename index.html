@@ -4,19 +4,45 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
 <title>Polish A1 Flashcards</title>
+
+<!-- Firebase SDK (compat v10) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{background:#0d0d0d}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#eee;min-height:100vh}
 
+/* Loading overlay */
+#loadingOverlay{
+  position:fixed;inset:0;background:#0d0d0d;z-index:999;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+}
+#loadingOverlay.hidden{display:none}
+.loader-spinner{
+  width:36px;height:36px;border:2.5px solid #2a2a2a;border-top-color:#555;
+  border-radius:50%;animation:spin 0.8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader-text{font-size:12px;color:#444;letter-spacing:0.06em;text-transform:uppercase}
+.loader-error{
+  max-width:300px;padding:20px;border-radius:14px;border:0.5px solid #3a2a2a;
+  background:#1a1010;text-align:center;display:none;
+}
+.loader-error h3{color:#c07a7a;font-size:14px;margin-bottom:8px}
+.loader-error p{color:#666;font-size:12px;line-height:1.6}
+.loader-error code{color:#888;font-size:11px;background:#111;padding:2px 6px;border-radius:4px}
+
+/* Page switch */
 .page-switch{
   position:sticky;top:0;z-index:50;
-  display:flex;gap:8px;padding:10px 12px;
+  display:flex;gap:6px;padding:10px 12px;
   background:#0d0d0d;border-bottom:0.5px solid #2a2a2a;
 }
 .page-btn{
-  flex:1;padding:10px 8px;border-radius:12px;border:0.5px solid #2a2a2a;
-  background:#161616;color:#888;font-size:14px;font-weight:500;
+  flex:1;padding:9px 6px;border-radius:12px;border:0.5px solid #2a2a2a;
+  background:#161616;color:#888;font-size:13px;font-weight:500;
   cursor:pointer;transition:all 0.15s;
 }
 .page-btn.active{background:#1e1e1e;color:#fff;border-color:#555}
@@ -40,19 +66,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;c
 .polish-text{font-size:clamp(18px,5.5vw,24px);font-weight:600;color:#f5f5f5;margin-bottom:4px;line-height:1.35}
 .pron{font-size:12px;color:#777;font-style:italic;margin-bottom:6px}
 
-/* TTS button */
 .tts-btn{
   display:inline-flex;align-items:center;gap:5px;
   margin:4px auto 6px;padding:5px 14px;border-radius:20px;
   border:0.5px solid #2e2e2e;background:#1a1a1a;color:#888;
-  font-size:11px;cursor:pointer;letter-spacing:0.04em;
-  transition:all 0.15s;
+  font-size:11px;cursor:pointer;letter-spacing:0.04em;transition:all 0.15s;
 }
 .tts-btn:active{background:#222;color:#ccc}
 .tts-btn.speaking{border-color:#4a6a7c;color:#6aaccc}
 .tts-btn svg{width:12px;height:12px;fill:currentColor;flex-shrink:0}
-
-/* Arabic TTS button - slightly different style */
 .tts-btn.arabic{border-color:#6a8a6a;color:#6aaccc}
 .tts-btn.arabic:active{background:#222;color:#6aff99}
 .tts-btn.arabic.speaking{border-color:#6aff99;color:#6aff99}
@@ -60,11 +82,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;c
 .keyword{display:inline-block;font-size:11px;padding:3px 12px;border-radius:12px;letter-spacing:0.03em;margin-bottom:4px}
 .theme-tag{font-size:11px;color:#444;margin-top:2px}
 .arabic-text{font-size:clamp(18px,5.5vw,24px);color:#e8dfc8;direction:rtl;margin-bottom:4px;line-height:1.6;font-weight:500}
-
-/* Arabic transliteration (how to read Arabic in English) */
 .arab-translit{font-size:12px;color:#6a8a6a;font-style:italic;margin-bottom:6px;direction:ltr;letter-spacing:0.02em}
 .arab-translit-label{font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:#333;margin-bottom:1px}
-
 .english-text{font-size:13px;color:#666}
 .divider{width:32px;height:1px;background:#2a2a2a;margin:6px auto}
 .flip-hint{font-size:11px;color:#333;margin-top:8px;letter-spacing:0.06em;text-transform:uppercase}
@@ -76,26 +95,107 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;c
 
 .shuffle{display:block;margin:0 auto;padding:8px 22px;border-radius:20px;border:0.5px solid #2a2a2a;background:transparent;color:#555;font-size:12px;cursor:pointer}
 .shuffle:active{background:#1a1a1a}
-
-/* TTS not available notice */
 .tts-notice{font-size:10px;color:#3a3a3a;text-align:center;margin-top:6px}
+
+/* Spell Test (Page 3) */
+.spell-card{
+  border-radius:18px;border:0.5px solid #2a2a2a;background:#161616;
+  padding:1.4rem 1.2rem;margin-bottom:1.2rem;
+}
+.spell-prompt{text-align:center;margin-bottom:1.3rem}
+.spell-input-wrap{display:flex;flex-direction:column;align-items:center;gap:10px}
+.spell-input{
+  width:100%;max-width:400px;padding:13px 16px;border-radius:12px;
+  border:0.5px solid #333;background:#0d0d0d;color:#eee;
+  font-size:17px;text-align:center;outline:none;
+  transition:border-color 0.2s;letter-spacing:0.02em;
+  -webkit-appearance:none;caret-color:#888;
+}
+.spell-input:focus{border-color:#555}
+.spell-input.is-correct{border-color:#4a7c59;background:#4a7c5912}
+.spell-input.is-wrong{border-color:#7c4a4a;background:#7c4a4a12}
+.check-btn{
+  padding:12px 36px;border-radius:12px;border:0.5px solid #2a2a2a;
+  background:#1e1e1e;color:#ccc;font-size:15px;cursor:pointer;
+  transition:all 0.15s;min-width:170px;
+}
+.check-btn:active{transform:scale(0.97)}
+.spell-result{
+  margin-top:1rem;padding:12px 14px;border-radius:12px;
+  font-size:13px;line-height:1.65;text-align:center;display:none;
+}
+.spell-result.show{display:block}
+.spell-result.correct-result{background:#4a7c5918;border:0.5px solid #4a7c5940}
+.spell-result.wrong-result{background:#7c4a4a18;border:0.5px solid #7c4a4a40}
+.result-icon{font-size:22px;margin-bottom:4px}
+.result-verdict{font-size:13px;font-weight:600;margin-bottom:6px}
+.correct-result .result-verdict{color:#6aac7a}
+.wrong-result .result-verdict{color:#c07a7a}
+.result-answer{color:#888;font-size:12px}
+.result-answer strong{color:#aaa}
+.result-pron{color:#555;font-size:11px;font-style:italic;margin-top:3px}
+.spell-footer{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;flex-wrap:wrap;margin-bottom:0.8rem;
+}
+.spell-score{font-size:13px;color:#555;font-variant-numeric:tabular-nums}
+.spell-score b{color:#888}
+.spell-options{
+  display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:0.5rem;
+}
+.spell-opt{
+  display:flex;align-items:center;gap:6px;font-size:12px;color:#555;
+  cursor:pointer;user-select:none;
+}
+.spell-opt input[type=checkbox]{
+  appearance:none;-webkit-appearance:none;
+  width:14px;height:14px;border:0.5px solid #444;border-radius:3px;
+  background:#161616;cursor:pointer;flex-shrink:0;position:relative;
+  transition:background 0.15s;
+}
+.spell-opt input[type=checkbox]:checked{background:#555;border-color:#777}
+.spell-opt input[type=checkbox]:checked::after{
+  content:"v";position:absolute;color:#eee;font-size:9px;top:1px;left:2px;
+}
+.reset-btn{
+  font-size:11px;color:#333;background:transparent;border:none;cursor:pointer;
+  padding:3px 8px;border-radius:6px;transition:color 0.15s;
+}
+.reset-btn:hover{color:#666}
 
 @media(min-width:600px){
   .nav-btn{font-size:14px;padding:10px 24px;max-width:160px}
+  .page-btn{font-size:14px}
 }
 </style>
 </head>
 <body>
 
+<!-- Loading overlay -->
+<div id="loadingOverlay">
+  <div class="loader-spinner" id="loaderSpinner"></div>
+  <div class="loader-text" id="loaderText">Loading vocabulary...</div>
+  <div class="loader-error" id="loaderError">
+    <h3>Firebase not configured</h3>
+    <p>
+      Open <code>index.html</code> and replace the placeholder values in<br>
+      <code>firebaseConfig</code> with your project credentials.<br><br>
+      Then run <code>node seed-firebase.js</code> to upload the vocabulary.
+    </p>
+  </div>
+</div>
+
+<!-- Page switch -->
 <div class="page-switch">
-  <button class="page-btn active" id="btnPage1" onclick="switchPage(1)">🇵🇱 → 🇸🇦 Learn</button>
-  <button class="page-btn" id="btnPage2" onclick="switchPage(2)">🇸🇦 → 🇵🇱 Guess</button>
+  <button class="page-btn active" id="btnPage1" onclick="switchPage(1)">&#127477;&#127473;&#8594;&#127480;&#127462; Learn</button>
+  <button class="page-btn"        id="btnPage2" onclick="switchPage(2)">&#127480;&#127462;&#8594;&#127477;&#127473; Guess</button>
+  <button class="page-btn"        id="btnPage3" onclick="switchPage(3)">&#9999;&#65039; Spell</button>
 </div>
 
 <!-- PAGE 1: Polish front -->
 <div class="app" id="page1">
   <div class="tabs" id="tabs1"></div>
-  <p class="hint">tap card to flip · ‹ › to move</p>
+  <p class="hint">tap card to flip &middot; &lsaquo; &rsaquo; to move</p>
   <div class="scene" id="scene1" onclick="flip1()">
     <div class="inner" id="inner1">
       <div class="face front">
@@ -118,7 +218,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;c
           <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
           Listen Arabic
         </button>
-        <div class="arab-translit-label">كيف تُقرأ بالحروف اللاتينية</div>
+        <div class="arab-translit-label">&#1603;&#1610;&#1601; &#1578;&#1615;&#1602;&#1585;&#1571; &#1576;&#1575;&#1604;&#1581;&#1585;&#1608;&#1601; &#1575;&#1604;&#1604;&#1575;&#1578;&#1610;&#1606;&#1610;&#1577;</div>
         <div class="arab-translit" id="bat"></div>
         <div class="divider"></div>
         <div class="english-text" id="be"></div>
@@ -126,11 +226,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;c
     </div>
   </div>
   <div class="controls">
-    <button class="nav-btn" onclick="prev1()">‹ Prev</button>
+    <button class="nav-btn" onclick="prev1()">&lsaquo; Prev</button>
     <span class="prog" id="prog1"></span>
-    <button class="nav-btn" onclick="next1()">Next ›</button>
+    <button class="nav-btn" onclick="next1()">Next &rsaquo;</button>
   </div>
-  <button class="shuffle" onclick="shuffleDeck1()">⇄ Shuffle deck</button>
+  <button class="shuffle" onclick="shuffleDeck1()">&#8644; Shuffle deck</button>
   <p class="tts-notice" id="ttsNotice1"></p>
 </div>
 
@@ -147,7 +247,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;c
           <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
           Listen Arabic
         </button>
-        <div class="arab-translit-label">كيف تُقرأ بالحروف اللاتينية</div>
+        <div class="arab-translit-label">&#1603;&#1610;&#1601; &#1578;&#1615;&#1602;&#1585;&#1571; &#1576;&#1575;&#1604;&#1581;&#1585;&#1608;&#1601; &#1575;&#1604;&#1604;&#1575;&#1578;&#1610;&#1606;&#1610;&#1577;</div>
         <div class="arab-translit" id="rbat"></div>
         <div class="divider"></div>
         <div class="english-text" id="rbe"></div>
@@ -168,297 +268,265 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;c
     </div>
   </div>
   <div class="controls">
-    <button class="nav-btn" onclick="prev2()">‹ Prev</button>
+    <button class="nav-btn" onclick="prev2()">&lsaquo; Prev</button>
     <span class="prog" id="prog2"></span>
-    <button class="nav-btn" onclick="next2()">Next ›</button>
+    <button class="nav-btn" onclick="next2()">Next &rsaquo;</button>
   </div>
-  <button class="shuffle" onclick="shuffleDeck2()">⇄ Shuffle deck</button>
+  <button class="shuffle" onclick="shuffleDeck2()">&#8644; Shuffle deck</button>
   <p class="tts-notice" id="ttsNotice2"></p>
 </div>
 
+<!-- PAGE 3: Spelling test -->
+<div class="app" id="page3" style="display:none">
+  <div class="tabs" id="tabs3"></div>
+  <p class="hint">read the clue &middot; type Polish &middot; press check</p>
+
+  <div class="spell-card">
+    <div class="spell-prompt">
+      <div class="arabic-text" id="sp-arabic"></div>
+      <div class="arab-translit" id="sp-arTranslit"></div>
+      <div class="divider"></div>
+      <div class="english-text" id="sp-english"></div>
+    </div>
+    <div class="spell-input-wrap">
+      <input
+        type="text" id="spellInput" class="spell-input"
+        placeholder="Type in Polish..."
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+        onkeydown="onSpellKey(event)"
+      >
+      <button class="check-btn" id="checkBtn" onclick="checkSpelling()">Check</button>
+    </div>
+    <div class="spell-result" id="spellResult">
+      <div class="result-icon" id="resultIcon"></div>
+      <div class="result-verdict" id="resultVerdict"></div>
+      <div class="result-answer" id="resultAnswer"></div>
+      <div class="result-pron" id="resultPron"></div>
+    </div>
+  </div>
+
+  <div class="spell-footer">
+    <div class="spell-score">Score: <b id="spellCorrect">0</b> / <b id="spellTotal">0</b></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="reset-btn" onclick="resetSpellScore()">Reset</button>
+      <button class="nav-btn" style="max-width:110px;padding:10px 8px" onclick="nextSpell()">Next &rsaquo;</button>
+    </div>
+  </div>
+
+  <div class="spell-options">
+    <label class="spell-opt">
+      <input type="checkbox" id="lenientMode" checked>
+      Ignore diacritics
+    </label>
+    <label class="spell-opt">
+      <input type="checkbox" id="ignorePunct" checked>
+      Ignore punctuation
+    </label>
+    <label class="spell-opt">
+      <input type="checkbox" id="autoSpeak" checked>
+      Auto-listen on reveal
+    </label>
+  </div>
+</div>
+
 <script>
-/* ===== DATA ===== */
-/* at = Arabic transliteration (how to read Arabic in English letters) */
-const all=[
-  {t:"daily",p:"Dzień dobry.",r:"djen DOH-bry",a:"صباح الخير.",at:"sabah al-khayr",e:"Good morning.",k:"dzień dobry"},
-  {t:"daily",p:"Dobry wieczór.",r:"DOH-bry vye-CHOOR",a:"مساء الخير.",at:"masa' al-khayr",e:"Good evening.",k:"wieczór"},
-  {t:"daily",p:"Dobranoc.",r:"doh-BRAH-nots",a:"تصبح على خير.",at:"tusbih 'ala khayr",e:"Good night.",k:"dobranoc"},
-  {t:"daily",p:"Jak się masz?",r:"yak sheh mash",a:"كيف حالك؟",at:"kayfa halak?",e:"How are you?",k:"jak się masz"},
-  {t:"daily",p:"Dobrze, dziękuję.",r:"DOH-bzhe, djen-KOO-yeh",a:"بخير، شكراً.",at:"bikhair, shukran",e:"Fine, thank you.",k:"dobrze"},
-  {t:"daily",p:"Nie rozumiem.",r:"nyeh roh-ZOO-myem",a:"لا أفهم.",at:"la afham",e:"I don't understand.",k:"nie rozumiem"},
-  {t:"daily",p:"Czy mówisz po angielsku?",r:"chi MOO-vish poh an-GYEL-skoo",a:"هل تتكلم الإنجليزية؟",at:"hal tatakallam al-ingleeziyya?",e:"Do you speak English?",k:"mówisz"},
-  {t:"daily",p:"Proszę mówić wolniej.",r:"PROH-sheh MOO-vich VOL-nyey",a:"من فضلك تكلم ببطء.",at:"min fadlak takallam bibut'",e:"Please speak slower.",k:"wolniej"},
-  {t:"daily",p:"Jak to się mówi po polsku?",r:"yak toh sheh MOO-vee poh POL-skoo",a:"كيف تقول هذا بالبولندية؟",at:"kayfa taqul hadha bil-bulundiyya?",e:"How do you say this in Polish?",k:"po polsku"},
-  {t:"daily",p:"Mieszkam w Warszawie.",r:"myesh-KAM v var-SHA-vye",a:"أسكن في وارسو.",at:"askun fi warso",e:"I live in Warsaw.",k:"mieszkam"},
-  {t:"daily",p:"Mam klucze.",r:"mam KLOO-cheh",a:"معي المفاتيح.",at:"ma'i al-mafateeh",e:"I have the keys.",k:"mam"},
-  {t:"daily",p:"To jest moje mieszkanie.",r:"toh yest MOH-ye myesh-KAH-nye",a:"هذه شقتي.",at:"hadhihi shaqati",e:"This is my apartment.",k:"mieszkanie"},
-  {t:"daily",p:"Chcę się położyć.",r:"htseh sheh poh-WOH-zhich",a:"أريد أن أنام.",at:"ureed an anam",e:"I want to lie down.",k:"chcę"},
-  {t:"daily",p:"Jestem zmęczony.",r:"YES-tem zmen-CHOH-ny",a:"أنا متعب.",at:"ana mut'ab",e:"I'm tired.",k:"zmęczony"},
-  {t:"daily",p:"Potrzebuję pomocy.",r:"poh-tsheh-BOO-yeh poh-MOH-tsy",a:"أحتاج مساعدة.",at:"ahtaj musa'ada",e:"I need help.",k:"potrzebuję"},
-  {t:"daily",p:"Gdzie jest łazienka?",r:"gdye yest wah-ZYEN-kah",a:"أين الحمام؟",at:"ayna al-hammam?",e:"Where is the bathroom?",k:"łazienka"},
-  {t:"daily",p:"Włącz światło, proszę.",r:"vwonch SHVYAT-woh PROH-sheh",a:"أضئ النور، من فضلك.",at:"adhi' al-noor, min fadlak",e:"Turn on the light, please.",k:"włącz"},
-  {t:"daily",p:"Zimno mi.",r:"ZEEM-noh mee",a:"أنا بارد.",at:"ana barid",e:"I'm cold.",k:"zimno"},
-  {t:"daily",p:"Gorąco mi.",r:"goh-ROHN-tso mee",a:"أنا حار.",at:"ana harr",e:"I'm hot.",k:"gorąco"},
-  {t:"daily",p:"Idę spać.",r:"EE-deh spach",a:"سأنام الآن.",at:"sa'anam al-an",e:"I'm going to sleep.",k:"idę spać"},
-  {t:"daily",p:"Zaraz wracam.",r:"ZAH-raz VRAH-tsam",a:"سأعود قريباً.",at:"sa'aood qareeban",e:"I'll be right back.",k:"zaraz"},
-  {t:"daily",p:"Przepraszam za spóźnienie.",r:"pshe-PROH-shahm zah spoozh-NYE-nye",a:"آسف على التأخير.",at:"asif 'ala al-ta'kheer",e:"Sorry for being late.",k:"spóźnienie"},
-  {t:"daily",p:"Nie ma problemu.",r:"nyeh mah proh-BLE-moo",a:"لا مشكلة.",at:"la mushkila",e:"No problem.",k:"nie ma problemu"},
-  {t:"daily",p:"Rozumiem.",r:"roh-ZOO-myem",a:"أفهم.",at:"afham",e:"I understand.",k:"rozumiem"},
-  {t:"daily",p:"Czy mogę otworzyć okno?",r:"chi MOH-geh ot-VOH-zhich OK-noh",a:"هل يمكنني فتح النافذة؟",at:"hal yumkinuni fath al-nafidha?",e:"Can I open the window?",k:"mogę"},
-  {t:"daily",p:"Przepraszam, nie słyszę.",r:"pshe-PROH-shahm nyeh SWIH-sheh",a:"آسف، لا أسمع.",at:"asif, la asma'",e:"Sorry, I can't hear.",k:"słyszę"},
-  {t:"daily",p:"Możesz powtórzyć?",r:"MOH-zhesh pov-TOO-zhich",a:"هل يمكنك التكرار؟",at:"hal yumkinuka al-tikrar?",e:"Can you repeat?",k:"powtórzyć"},
-  {t:"daily",p:"Proszę napisać to.",r:"PROH-sheh nah-PEE-sach toh",a:"من فضلك اكتب هذا.",at:"min fadlak uktub hadha",e:"Please write that down.",k:"napisać"},
-  {t:"transit",p:"Gdzie jest metro?",r:"gdye yest ME-troh",a:"أين المترو؟",at:"ayna al-metro?",e:"Where is the metro?",k:"metro"},
-  {t:"transit",p:"Ile to kosztuje?",r:"EE-leh toh kosh-TOO-yeh",a:"كم يكلف هذا؟",at:"kam yukallifu hadha?",e:"How much does this cost?",k:"ile kosztuje"},
-  {t:"transit",p:"Poproszę bilet.",r:"poh-PROH-sheh BEE-let",a:"تذكرة، من فضلك.",at:"tadhkara, min fadlak",e:"A ticket, please.",k:"bilet"},
-  {t:"transit",p:"Czy to jest autobus do centrum?",r:"chi toh yest ow-TOH-boos doh TSEN-troom",a:"هل هذا الأوتوبيس للمركز؟",at:"hal hadha al-otoobees lil-markaz?",e:"Is this the bus to the center?",k:"autobus"},
-  {t:"transit",p:"Przepraszam, zgubiam się.",r:"pshe-PROH-shahm ZGOO-byam sheh",a:"عفواً، أنا ضائع.",at:"'afwan, ana da'i'",e:"Excuse me, I'm lost.",k:"zgubiam się"},
-  {t:"transit",p:"Ile minut stąd?",r:"EE-leh MEE-noot stont",a:"كم دقيقة من هنا؟",at:"kam daqeeqa min huna?",e:"How many minutes from here?",k:"stąd"},
-  {t:"transit",p:"Następny przystanek.",r:"nas-TEMP-ny pshi-STAH-nek",a:"المحطة القادمة.",at:"al-mahatta al-qadima",e:"Next stop.",k:"następny"},
-  {t:"transit",p:"Proszę, gdzie wysiąść?",r:"PROH-sheh gdye vy-SHONSHCH",a:"من فضلك، أين أنزل؟",at:"min fadlak, ayna anzil?",e:"Please, where should I get off?",k:"wysiąść"},
-  {t:"transit",p:"Jak dojechać na lotnisko?",r:"yak doh-YEH-hach nah lot-NEE-skoh",a:"كيف أصل إلى المطار؟",at:"kayfa asil ila al-matar?",e:"How do I get to the airport?",k:"lotnisko"},
-  {t:"transit",p:"Czy jest tu parking?",r:"chi yest too PAR-king",a:"هل يوجد موقف سيارات هنا؟",at:"hal yujad mawqif sayyarat huna?",e:"Is there parking here?",k:"parking"},
-  {t:"transit",p:"Skręć w lewo.",r:"skrehnch v LEH-voh",a:"اتجه يساراً.",at:"ittajeh yasaran",e:"Turn left.",k:"lewo"},
-  {t:"transit",p:"Skręć w prawo.",r:"skrehnch v PRAH-voh",a:"اتجه يميناً.",at:"ittajeh yamenan",e:"Turn right.",k:"prawo"},
-  {t:"transit",p:"Idź prosto.",r:"eetch PROH-stoh",a:"امش مستقيماً.",at:"imshi mustaqeeman",e:"Go straight.",k:"prosto"},
-  {t:"transit",p:"To jest daleko?",r:"toh yest dah-LEH-koh",a:"هل هذا بعيد؟",at:"hal hadha ba'eed?",e:"Is it far?",k:"daleko"},
-  {t:"transit",p:"Zadzwoń do mnie.",r:"ZAD-zvon doh MNYEH",a:"اتصل بي.",at:"ittasil bi",e:"Call me.",k:"zadzwoń"},
-  {t:"transit",p:"Czekam na ciebie.",r:"CHE-kam nah CHYE-bye",a:"أنا في انتظارك.",at:"ana fi intizarak",e:"I'm waiting for you.",k:"czekam"},
-  {t:"transit",p:"Mój adres to...",r:"mooy AH-dres toh",a:"عنواني هو...",at:"'unwani huwa...",e:"My address is...",k:"adres"},
-  {t:"transit",p:"Poproszę taksówkę.",r:"poh-PROH-sheh tak-SOOF-keh",a:"أريد سيارة أجرة، من فضلك.",at:"ureed sayyarat ujra, min fadlak",e:"A taxi, please.",k:"taksówka"},
-  {t:"transit",p:"Czy mogę tu zaparkować?",r:"chi MOH-geh too zah-par-KOH-vach",a:"هل يمكنني الوقوف هنا؟",at:"hal yumkinuni al-wuqoof huna?",e:"Can I park here?",k:"zaparkować"},
-  {t:"transit",p:"O której godzinie odjeżdża pociąg?",r:"oh KTOO-rey goh-JEE-nye od-YEZH-jah POH-chyong",a:"في أي ساعة يغادر القطار؟",at:"fi ayyi sa'a yughadir al-qitar?",e:"What time does the train leave?",k:"pociąg"},
-  {t:"food",p:"Poproszę kawę z mlekiem.",r:"poh-PROH-sheh KAH-veh z mle-KYEM",a:"قهوة بالحليب، من فضلك.",at:"qahwa bil-haleeb, min fadlak",e:"A coffee with milk, please.",k:"kawa"},
-  {t:"food",p:"Co polecasz?",r:"tso poh-LEH-tsash",a:"ماذا توصي؟",at:"madha tusi?",e:"What do you recommend?",k:"polecasz"},
-  {t:"food",p:"Czy jest menu po angielsku?",r:"chi yest ME-noo poh an-GYEL-skoo",a:"هل يوجد قائمة بالإنجليزية؟",at:"hal yujad qa'ima bil-ingleeziyya?",e:"Is there a menu in English?",k:"menu"},
-  {t:"food",p:"Poproszę rachunek.",r:"poh-PROH-sheh ra-HOO-nek",a:"الحساب، من فضلك.",at:"al-hisab, min fadlak",e:"The bill, please.",k:"rachunek"},
-  {t:"food",p:"Jestem głodny.",r:"YES-tem GWOD-ny",a:"أنا جائع.",at:"ana ja'i'",e:"I'm hungry.",k:"głodny"},
-  {t:"food",p:"To jest bardzo smaczne.",r:"toh yest BAR-dzoh SMACH-neh",a:"هذا لذيذ جداً.",at:"hadha ladheedh jiddan",e:"This is very tasty.",k:"smaczne"},
-  {t:"food",p:"Nie jem mięsa.",r:"nyeh yem MYEN-sah",a:"أنا لا آكل اللحم.",at:"ana la akul al-lahm",e:"I don't eat meat.",k:"nie jem"},
-  {t:"food",p:"Poproszę szklankę wody.",r:"poh-PROH-sheh shklan-KEH VOH-dy",a:"كوب ماء، من فضلك.",at:"koob ma', min fadlak",e:"A glass of water, please.",k:"woda"},
-  {t:"food",p:"Czy to jest ostre?",r:"chi toh yest OS-treh",a:"هل هذا حار؟",at:"hal hadha harr?",e:"Is this spicy?",k:"ostre"},
-  {t:"food",p:"Bez cukru, proszę.",r:"bez TSOO-kroo PROH-sheh",a:"بدون سكر، من فضلك.",at:"bidoon sukkar, min fadlak",e:"Without sugar, please.",k:"bez cukru"},
-  {t:"food",p:"Na wynos, proszę.",r:"nah VY-nos PROH-sheh",a:"للأخذ، من فضلك.",at:"lil-akhdh, min fadlak",e:"To take away, please.",k:"na wynos"},
-  {t:"food",p:"Stolik dla dwóch osób.",r:"STOH-leek dlah dvooh OH-soob",a:"طاولة لشخصين.",at:"tawila lishakhsayn",e:"A table for two.",k:"stolik"},
-  {t:"food",p:"Czy mogę zamówić?",r:"chi MOH-geh zah-MOO-veech",a:"هل يمكنني الطلب؟",at:"hal yumkinuni al-talab?",e:"Can I order?",k:"zamówić"},
-  {t:"food",p:"Mam alergię na orzechy.",r:"mam ah-LER-gyeh nah oh-ZHE-hy",a:"عندي حساسية من المكسرات.",at:"'indi hasasiyya min al-mukassarat",e:"I'm allergic to nuts.",k:"alergia"},
-  {t:"food",p:"To jest za słone.",r:"toh yest zah SWOH-neh",a:"هذا مالح جداً.",at:"hadha malih jiddan",e:"This is too salty.",k:"słone"},
-  {t:"food",p:"Poproszę herbatę.",r:"poh-PROH-sheh her-BAH-teh",a:"شاي، من فضلك.",at:"shay, min fadlak",e:"A tea, please.",k:"herbata"},
-  {t:"food",p:"Czy jest coś wegetariańskiego?",r:"chi yest tsosh ve-ge-tah-RYAHN-skye-go",a:"هل يوجد شيء نباتي؟",at:"hal yujad shay' nabati?",e:"Is there something vegetarian?",k:"wegetariańskie"},
-  {t:"food",p:"Jestem najedzony.",r:"YES-tem nah-ye-DOH-ny",a:"أنا شبعان.",at:"ana shab'an",e:"I'm full.",k:"najedzony"},
-  {t:"food",p:"Zapłacimy osobno.",r:"zah-PWAH-tsee-my oh-SOB-noh",a:"سندفع كل واحد منا على حدة.",at:"sanadfa' kull wahid minna 'ala hidda",e:"We'll pay separately.",k:"osobno"},
-  {t:"food",p:"Czy mogę dostać paragon?",r:"chi MOH-geh DOS-tach pah-RAH-gon",a:"هل يمكنني الحصول على إيصال؟",at:"hal yumkinuni al-husool 'ala eesal?",e:"Can I get a receipt?",k:"paragon"},
-  {t:"food",p:"Poproszę jeszcze raz.",r:"poh-PROH-sheh YESH-cheh ras",a:"مرة أخرى، من فضلك.",at:"marra ukhra, min fadlak",e:"Once more, please / same again.",k:"jeszcze raz"},
-  {t:"shop",p:"Gdzie jest sklep spożywczy?",r:"gdye yest sklep spoh-ZHYV-chy",a:"أين متجر البقالة؟",at:"ayna matjar al-buqala?",e:"Where is the grocery store?",k:"sklep"},
-  {t:"shop",p:"Ile to kosztuje?",r:"EE-leh toh kosh-TOO-yeh",a:"كم سعر هذا؟",at:"kam si'r hadha?",e:"How much does this cost?",k:"kosztuje"},
-  {t:"shop",p:"Czy mogę zapłacić kartą?",r:"chi MOH-geh zah-PWAH-cheech KAR-toh",a:"هل يمكنني الدفع بالبطاقة؟",at:"hal yumkinuni al-daf' bil-bitaqa?",e:"Can I pay by card?",k:"zapłacić"},
-  {t:"shop",p:"Poproszę torbę.",r:"poh-PROH-sheh TOR-beh",a:"كيس، من فضلك.",at:"kees, min fadlak",e:"A bag, please.",k:"torba"},
-  {t:"shop",p:"Czy macie rozmiar M?",r:"chi MAH-chye ROZ-myar em",a:"هل عندكم مقاس M؟",at:"hal 'indakum maqas M?",e:"Do you have size M?",k:"rozmiar"},
-  {t:"shop",p:"To jest za drogie.",r:"toh yest zah DROH-gye",a:"هذا غالي جداً.",at:"hadha ghali jiddan",e:"This is too expensive.",k:"drogie"},
-  {t:"shop",p:"Szukam apteki.",r:"SHOO-kam ap-TEH-kee",a:"أبحث عن صيدلية.",at:"abhath 'an saydaliyya",e:"I'm looking for a pharmacy.",k:"apteka"},
-  {t:"shop",p:"Czy jest tu bankomat?",r:"chi yest too ban-KOH-mat",a:"هل يوجد صراف آلي هنا؟",at:"hal yujad sarraf ali huna?",e:"Is there an ATM here?",k:"bankomat"},
-  {t:"shop",p:"Chcę to zwrócić.",r:"htseh toh ZVROO-cheech",a:"أريد إرجاع هذا.",at:"ureed irja' hadha",e:"I want to return this.",k:"zwrócić"},
-  {t:"shop",p:"Czy jest rabat?",r:"chi yest RAH-bat",a:"هل يوجد خصم؟",at:"hal yujad khasm?",e:"Is there a discount?",k:"rabat"},
-  {t:"shop",p:"Poproszę paragon.",r:"poh-PROH-sheh pah-RAH-gon",a:"الإيصال، من فضلك.",at:"al-eesal, min fadlak",e:"The receipt, please.",k:"paragon"},
-  {t:"shop",p:"Otwieram o ósmej.",r:"ot-VYE-ram oh OOS-mey",a:"يفتح الساعة الثامنة.",at:"yaftah al-sa'a al-thamina",e:"It opens at eight.",k:"otwieram"},
-  {t:"shop",p:"Sklep jest zamknięty.",r:"sklep yest zam-KNYEH-ty",a:"المتجر مغلق.",at:"al-matjar mughlaq",e:"The shop is closed.",k:"zamknięty"},
-  {t:"shop",p:"Czy to jest w promocji?",r:"chi toh yest v proh-MOH-tsyee",a:"هل هذا في العرض؟",at:"hal hadha fil-'ard?",e:"Is this on sale?",k:"promocja"},
-  {t:"shop",p:"Potrzebuję lekarstwa.",r:"poh-tsheh-BOO-yeh le-KAR-stvah",a:"أحتاج دواء.",at:"ahtaj dawa'",e:"I need medicine.",k:"lekarstwo"},
-  {t:"social",p:"Skąd jesteś?",r:"skont YES-tesh",a:"من أين أنت؟",at:"min ayna anta?",e:"Where are you from?",k:"skąd"},
-  {t:"social",p:"Jestem z Egiptu.",r:"YES-tem z e-GZIP-too",a:"أنا من مصر.",at:"ana min misr",e:"I'm from Egypt.",k:"z Egiptu"},
-  {t:"social",p:"Miło mi cię poznać.",r:"MEE-woh mee cheh POZ-nach",a:"سعيد بلقائك.",at:"sa'eed biliqa'ik",e:"Nice to meet you.",k:"miło poznać"},
-  {t:"social",p:"Jak masz na imię?",r:"yak mash nah EE-myeh",a:"ما اسمك؟",at:"ma ismuk?",e:"What is your name?",k:"imię"},
-  {t:"social",p:"Mam na imię Mohamed.",r:"mam nah EE-myeh moh-HA-med",a:"اسمي محمد.",at:"ismi Muhammad",e:"My name is Mohamed.",k:"mam na imię"},
-  {t:"social",p:"Uczę się polskiego.",r:"OO-cheh sheh pol-SKYE-go",a:"أنا أتعلم البولندية.",at:"ana ata'allam al-bulundiyya",e:"I'm learning Polish.",k:"uczę się"},
-  {t:"social",p:"Mój polski nie jest dobry.",r:"mooy POL-skee nyeh yest DOH-bry",a:"بولنديتي ليست جيدة.",at:"bulundiyati laysat jayyida",e:"My Polish is not good.",k:"mój polski"},
-  {t:"social",p:"Czy możemy mówić po angielsku?",r:"chi moh-ZHE-my MOO-vich poh an-GYEL-skoo",a:"هل يمكننا التحدث بالإنجليزية؟",at:"hal yumkinuna al-tahadduth bil-ingleeziyya?",e:"Can we speak English?",k:"angielsku"},
-  {t:"social",p:"Do zobaczenia.",r:"doh zoh-bah-CHE-nya",a:"إلى اللقاء.",at:"ila al-liqa'",e:"See you later.",k:"do zobaczenia"},
-  {t:"social",p:"Na zdrowie!",r:"nah ZDROH-vye",a:"في صحتك!",at:"fi sihhtak!",e:"Cheers! / Bless you!",k:"na zdrowie"},
-  {t:"social",p:"Wszystkiego najlepszego.",r:"vshistkye-go nay-LEP-she-go",a:"كل التوفيق / عيد ميلاد سعيد.",at:"kull al-tawfeeq / 'eed milad sa'eed",e:"All the best / Happy birthday!",k:"najlepszego"},
-  {t:"social",p:"To nie mój problem.",r:"toh nyeh mooy PROH-blem",a:"هذه ليست مشكلتي.",at:"hadhihi laysat mushkilati",e:"That's not my problem.",k:"problem"},
-  {t:"social",p:"Nie wiem.",r:"nyeh vyem",a:"لا أعرف.",at:"la a'rif",e:"I don't know.",k:"nie wiem"},
-  {t:"social",p:"Oczywiście.",r:"oh-chi-VEESH-chye",a:"بالطبع.",at:"bil-tab'",e:"Of course.",k:"oczywiście"},
-  {t:"social",p:"Może.",r:"MOH-zheh",a:"ربما.",at:"rubbama",e:"Maybe.",k:"może"},
-  {t:"social",p:"Ile masz lat?",r:"EE-leh mash lat",a:"كم عمرك؟",at:"kam 'umruk?",e:"How old are you?",k:"ile lat"},
-  {t:"social",p:"Mam trzydzieści dwa lata.",r:"mam tshih-DJESH-chee dvah LAH-tah",a:"عمري اثنان وثلاثون سنة.",at:"'umri ithnan wa-thalathun sana",e:"I am thirty-two years old.",k:"lata"},
-  {t:"social",p:"Czy masz rodzeństwo?",r:"chi mash roh-DJEN-stvoh",a:"هل لديك إخوة؟",at:"hal ladayk ikhwa?",e:"Do you have siblings?",k:"rodzeństwo"},
-  {t:"social",p:"Mam jedną siostrę.",r:"mam YED-noh SYOS-tsheh",a:"لدي أخت واحدة.",at:"ladayya ukht wahida",e:"I have one sister.",k:"siostra"},
-  {t:"social",p:"Praca mi się podoba.",r:"PRAH-tsah mee sheh poh-DOH-bah",a:"أنا أحب عملي.",at:"ana uhibb 'amali",e:"I like my work.",k:"podoba"},
-  {t:"time",p:"Który mamy rok?",r:"KTOO-ry MAH-my rok",a:"في أي سنة نحن؟",at:"fi ayyi sana nahnu?",e:"What year is it?",k:"rok"},
-  {t:"time",p:"Który mamy dzień?",r:"KTOO-ry MAH-my djen",a:"أي يوم نحن فيه؟",at:"ayyu yawm nahnu fih?",e:"What day is it?",k:"dzień"},
-  {t:"time",p:"Która godzina?",r:"KTOO-rah goh-JEE-nah",a:"كم الساعة؟",at:"kam al-sa'a?",e:"What time is it?",k:"godzina"},
-  {t:"time",p:"Jest godzina trzecia.",r:"yest goh-JEE-nah TSHE-chyah",a:"الساعة الثالثة.",at:"al-sa'a al-thalitha",e:"It is three o'clock.",k:"trzecia"},
-  {t:"time",p:"Dzisiaj jest poniedziałek.",r:"djee-SHAY yest poh-nye-JA-wek",a:"اليوم هو الإثنين.",at:"al-yawm huwa al-ithnayn",e:"Today is Monday.",k:"poniedziałek"},
-  {t:"time",p:"Jutro jest wtorek.",r:"YOO-troh yest VTOH-rek",a:"غداً هو الثلاثاء.",at:"ghadan huwa al-thulatha'",e:"Tomorrow is Tuesday.",k:"jutro"},
-  {t:"time",p:"Wczoraj był piątek.",r:"VCHO-ray byw PYON-tek",a:"أمس كان يوم الجمعة.",at:"ams kana yawm al-jumu'a",e:"Yesterday was Friday.",k:"wczoraj"},
-  {t:"time",p:"W tym miesiącu.",r:"v tym mye-SHON-tsoo",a:"في هذا الشهر.",at:"fi hadha al-shahr",e:"This month.",k:"miesiąc"},
-  {t:"time",p:"Za tydzień.",r:"zah TY-djen",a:"بعد أسبوع.",at:"ba'd usbu'",e:"In a week.",k:"tydzień"},
-  {t:"time",p:"Rano, po południu, wieczorem.",r:"RAH-noh, poh poh-WOO-dnyoo, vye-CHOH-rem",a:"صباحاً، بعد الظهر، مساءً.",at:"sabahan, ba'd al-zuhr, masa'an",e:"Morning, afternoon, evening.",k:"rano"},
-  {t:"work",p:"Gdzie pracujesz?",r:"gdye prah-TSOO-yesh",a:"أين تعمل؟",at:"ayna ta'mal?",e:"Where do you work?",k:"pracujesz"},
-  {t:"work",p:"Pracuję w biurze.",r:"prah-TSOO-yeh v BYOO-zheh",a:"أعمل في مكتب.",at:"a'mal fi maktab",e:"I work in an office.",k:"biuro"},
-  {t:"work",p:"Jestem inżynierem.",r:"YES-tem in-zhih-NYE-rem",a:"أنا مهندس.",at:"ana muhandis",e:"I am an engineer.",k:"inżynier"},
-  {t:"work",p:"O której zaczyna się praca?",r:"oh KTOO-rey zah-CHIH-nah sheh PRAH-tsah",a:"في أي ساعة تبدأ العمل؟",at:"fi ayyi sa'a tabda' al-'amal?",e:"What time does work start?",k:"zaczyna"},
-  {t:"work",p:"Mam spotkanie.",r:"mam spot-KAH-nye",a:"لدي اجتماع.",at:"ladayya ijtima'",e:"I have a meeting.",k:"spotkanie"},
-  {t:"work",p:"Wyślę maila.",r:"VY-shleh MY-lah",a:"سأرسل بريداً إلكترونياً.",at:"sa'ursil baridan iliktruniyyan",e:"I will send an email.",k:"mail"},
-  {t:"work",p:"Proszę zadzwonić później.",r:"PROH-sheh zad-ZVOH-neech POOZH-nyey",a:"من فضلك اتصل لاحقاً.",at:"min fadlak ittasil lahiqan",e:"Please call later.",k:"zadzwonić"},
-  {t:"health",p:"Źle się czuję.",r:"zhle sheh CHOO-yeh",a:"أنا لا أشعر بخير.",at:"ana la ash'ur bikhair",e:"I don't feel well.",k:"źle"},
-  {t:"health",p:"Boli mnie głowa.",r:"BOH-lee mnyeh GWOH-vah",a:"رأسي يؤلمني.",at:"ra'si yu'limuni",e:"My head hurts.",k:"głowa"},
-  {t:"health",p:"Boli mnie gardło.",r:"BOH-lee mnyeh GAR-dwoh",a:"حلقي يؤلمني.",at:"halqi yu'limuni",e:"My throat hurts.",k:"gardło"},
-  {t:"health",p:"Mam gorączkę.",r:"mam goh-RONCH-keh",a:"عندي حمى.",at:"'indi humma",e:"I have a fever.",k:"gorączka"},
-  {t:"health",p:"Potrzebuję lekarza.",r:"poh-tsheh-BOO-yeh le-KAH-zhah",a:"أحتاج طبيباً.",at:"ahtaj tabiban",e:"I need a doctor.",k:"lekarz"},
-  {t:"health",p:"Gdzie jest szpital?",r:"gdye yest SHPEE-tal",a:"أين المستشفى؟",at:"ayna al-mustashfa?",e:"Where is the hospital?",k:"szpital"},
-  {t:"health",p:"Jestem uczulony na penicylinę.",r:"YES-tem oo-choo-LOH-ny nah pe-nee-tsih-LIH-neh",a:"أنا حساس للبنسلين.",at:"ana hassas lil-binsilin",e:"I'm allergic to penicillin.",k:"uczulony"},
-  {t:"health",p:"Proszę zadzwonić po karetkę.",r:"PROH-sheh zad-ZVOH-neech poh kah-RET-keh",a:"اتصل بالإسعاف، من فضلك.",at:"ittasil bil-is'af, min fadlak",e:"Please call an ambulance.",k:"karetka"},
-  {t:"health",p:"Mam kaszel.",r:"mam KAH-shel",a:"عندي سعال.",at:"'indi su'al",e:"I have a cough.",k:"kaszel"},
-  {t:"home",p:"Szukam mieszkania do wynajęcia.",r:"SHOO-kam myesh-KAH-nya doh vy-nah-YEN-chyah",a:"أبحث عن شقة للإيجار.",at:"abhath 'an shaqqa lil-eejar",e:"I'm looking for an apartment to rent.",k:"wynajęcie"},
-  {t:"home",p:"Ile wynosi czynsz?",r:"EE-leh vy-NOH-see CHYNSH",a:"كم الإيجار؟",at:"kam al-eejar?",e:"How much is the rent?",k:"czynsz"},
-  {t:"home",p:"Czy media są wliczone?",r:"chi ME-dyah sohn vlee-CHOH-neh",a:"هل المرافق مشمولة؟",at:"hal al-marafiq mashmula?",e:"Are utilities included?",k:"media"},
-  {t:"home",p:"Gdzie jest klucz zapasowy?",r:"gdye yest klooch zah-pah-SOH-vy",a:"أين المفتاح الاحتياطي؟",at:"ayna al-miftah al-ihtiyati?",e:"Where is the spare key?",k:"klucz zapasowy"},
-  {t:"home",p:"Śmietnik jest na dole.",r:"SHMYET-neek yest nah DOH-leh",a:"الحاوية في الطابق الأرضي.",at:"al-hawiya fil-tabiq al-ardi",e:"The bin is downstairs.",k:"śmietnik"},
-  {t:"home",p:"Ogrzewanie nie działa.",r:"oh-gzheh-VAH-nye nyeh DJA-wah",a:"التدفئة لا تعمل.",at:"al-tadfi'a la ta'mal",e:"The heating doesn't work.",k:"ogrzewanie"},
-  {t:"numbers",p:"Mam trzydzieści lat.",r:"mam tshih-DJESH-chee lat",a:"عمري ثلاثون سنة.",at:"'umri thalathun sana",e:"I am thirty years old.",k:"trzydzieści"},
-  {t:"numbers",p:"Poproszę dwa.",r:"poh-PROH-sheh dvah",a:"اثنين، من فضلك.",at:"ithnayn, min fadlak",e:"Two, please.",k:"dwa"},
-  {t:"numbers",p:"Na pierwszym piętrze.",r:"nah PYERV-shym PYEN-tsheh",a:"في الطابق الأول.",at:"fil-tabiq al-awwal",e:"On the first floor.",k:"piętro"},
-  {t:"numbers",p:"Mój numer telefonu to...",r:"mooy NOO-mer te-le-FOH-noo toh",a:"رقم هاتفي هو...",at:"raqm hatifi huwa...",e:"My phone number is...",k:"numer telefonu"},
-  {t:"numbers",p:"To kosztuje sto złotych.",r:"toh kosh-TOO-yeh stoh ZWOH-tih",a:"هذا يكلف مئة زلوتي.",at:"hadha yukallifu mi'at zloti",e:"This costs one hundred złoty.",k:"sto złotych"},
-  {t:"weather",p:"Jaka jest pogoda?",r:"YAH-kah yest poh-GOH-dah",a:"كيف الطقس؟",at:"kayfa al-taqs?",e:"What is the weather like?",k:"pogoda"},
-  {t:"weather",p:"Pada deszcz.",r:"PAH-dah deshch",a:"المطر ينزل.",at:"al-matar yanzil",e:"It's raining.",k:"deszcz"},
-  {t:"weather",p:"Jest słonecznie.",r:"yest swoh-NECH-nye",a:"الجو مشمس.",at:"al-jaww mushmis",e:"It's sunny.",k:"słonecznie"},
-  {t:"weather",p:"Jest bardzo zimno.",r:"yest BAR-dzoh ZEEM-noh",a:"الجو بارد جداً.",at:"al-jaww barid jiddan",e:"It's very cold.",k:"zimno"},
-  {t:"weather",p:"Weź parasol.",r:"vezh pah-RAH-sol",a:"خذ المظلة.",at:"khudh al-mizalla",e:"Take an umbrella.",k:"parasol"},
+/* =====================================================================
+   FIREBASE CONFIG
+   Replace every YOUR_... value with your actual Firebase project details.
+   After filling in, run:  node seed-firebase.js
+   ===================================================================== */
+const firebaseConfig = {
+  apiKey:            "AIzaSyDuSZnygLFaNNzfzN6qjR1S0GHwD-hMVj4",
+  authDomain:        "polish-24ab6.firebaseapp.com",
+  projectId:         "polish-24ab6",
+  storageBucket:     "polish-24ab6.firebasestorage.app",
+  messagingSenderId: "379033735292",
+  appId:             "1:379033735292:web:e9872f7c46187ffbd339f9"
+};
+
+/* =====================================================================
+   HARDCODED DATA (commented out — data now lives in Firebase)
+   Full dataset is in seed-firebase.js. Run that script to populate DB.
+   =====================================================================
+
+const _hardcodedAll=[
+  {t:"daily",p:"Dzien dobry.",r:"djen DOH-bry",a:"Sabah al-khayr",at:"sabah al-khayr",e:"Good morning.",k:"dzien dobry"},
+  // ... see seed-firebase.js for complete A1 reference data
 ];
 
-const themes=[
-  {id:"all",label:"All",icon:""},
-  {id:"daily",label:"Daily life",icon:"🏠"},
-  {id:"transit",label:"Getting around",icon:"🚌"},
-  {id:"food",label:"Food & cafes",icon:"☕"},
-  {id:"shop",label:"Shopping",icon:"🛍"},
-  {id:"social",label:"Small talk",icon:"💬"},
-  {id:"time",label:"Time",icon:"⏰"},
-  {id:"work",label:"Work",icon:"💼"},
-  {id:"health",label:"Health",icon:"🏥"},
-  {id:"home",label:"Home",icon:"🏡"},
-  {id:"numbers",label:"Numbers",icon:"🔢"},
-  {id:"weather",label:"Weather",icon:"🌤"},
+const _hardcodedThemes=[
+  {id:"daily",label:"Daily life",icon:""},
+  {id:"transit",label:"Getting around",icon:""},
+  ...
 ];
-const themeColors={daily:"#4a7c59",transit:"#4a6a7c",food:"#7c6a4a",shop:"#7c4a6a",social:"#4a4a7c",time:"#7c7c4a",work:"#6a4a7c",health:"#7c4a4a",home:"#4a6a7c",numbers:"#7c5a4a",weather:"#4a7c6a"};
-const themeLabels={daily:"🏠 Daily life",transit:"🚌 Getting around",food:"☕ Food & cafes",shop:"🛍 Shopping",social:"💬 Small talk",time:"⏰ Time",work:"💼 Work",health:"🏥 Health",home:"🏡 Home",numbers:"🔢 Numbers",weather:"🌤 Weather"};
+*/
 
-function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+/* =====================================================================
+   RUNTIME STATE
+   ===================================================================== */
+let all    = [];   // vocabulary from Firebase
+let themes = [];   // theme list from Firebase
 
-/* ===== TTS (Text-to-Speech) — 100% free, built into the browser ===== */
-let ttsReady=false;
-let arabicReady=false;
-let polishVoice=null;
-let arabicVoice=null;
+const themeColors = {
+  daily:"#4a7c59", transit:"#4a6a7c", food:"#7c6a4a", shop:"#7c4a6a",
+  social:"#4a4a7c", time:"#7c7c4a", work:"#6a4a7c", health:"#7c4a4a",
+  home:"#4a6a7c", numbers:"#7c5a4a", weather:"#4a7c6a",
+  colors:"#7c4a7c", family:"#5a7c4a", verbs:"#4a7c7c",
+  places:"#6a7c4a", body:"#7c6a5a"
+};
+let themeLabels = {};
 
-function initTTS(){
-  if(!('speechSynthesis' in window)){
-    document.getElementById("ttsNotice1").textContent="🔇 Text-to-speech not supported in this browser.";
-    document.getElementById("ttsNotice2").textContent="🔇 Text-to-speech not supported in this browser.";
+/* =====================================================================
+   FIREBASE LOAD
+   ===================================================================== */
+function isFirebaseConfigured() {
+  return !Object.values(firebaseConfig).some(v => String(v).startsWith("YOUR_"));
+}
+
+async function loadFromFirebase() {
+  if (!isFirebaseConfigured()) {
+    document.getElementById("loaderSpinner").style.display = "none";
+    document.getElementById("loaderText").style.display    = "none";
+    document.getElementById("loaderError").style.display   = "block";
+    return false;
+  }
+  try {
+    document.getElementById("loaderText").textContent = "Connecting to Firebase...";
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    document.getElementById("loaderText").textContent = "Loading vocabulary...";
+    const [vocabSnap, themesSnap] = await Promise.all([
+      db.collection("vocabulary").get(),
+      db.collection("themes").get()
+    ]);
+    if (vocabSnap.empty) throw new Error("No data found. Run seed.html first to upload vocabulary.");
+    all    = vocabSnap.docs.map(d => d.data());
+    themes = themesSnap.docs.map(d => d.data());
+    themes.forEach(th => { themeLabels[th.id] = (th.icon ? th.icon + " " : "") + th.label; });
+    return true;
+  } catch (err) {
+    console.error("Firebase load error:", err);
+    const errEl = document.getElementById("loaderError");
+    document.getElementById("loaderSpinner").style.display = "none";
+    document.getElementById("loaderText").style.display    = "none";
+    errEl.style.display   = "block";
+    errEl.querySelector("h3").textContent = "Failed to load";
+    errEl.querySelector("p").textContent  = err.message;
+    return false;
+  }
+}
+
+/* =====================================================================
+   HELPERS
+   ===================================================================== */
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function normalisePolish(s) {
+  return s.toLowerCase()
+    .replace(/a/g,"a").replace(/c/g,"c")   // keep ascii as-is
+    .replace(/\u0105/g,"a").replace(/\u0107/g,"c")
+    .replace(/\u0119/g,"e").replace(/\u0142/g,"l")
+    .replace(/\u0144/g,"n").replace(/\u00f3/g,"o")
+    .replace(/\u015b/g,"s").replace(/\u017a/g,"z")
+    .replace(/\u017c/g,"z").trim();
+}
+
+function removePunct(s) {
+  return s.replace(/[.,?!;:\u2026\u2013\u2014]/g,"").replace(/\s+/g," ").trim();
+}
+
+/* =====================================================================
+   TTS
+   ===================================================================== */
+let ttsReady=false, arabicReady=false, polishVoice=null, arabicVoice=null;
+
+function initTTS() {
+  if (!("speechSynthesis" in window)) {
+    ["ttsNotice1","ttsNotice2"].forEach(id =>
+      document.getElementById(id).textContent = "Text-to-speech not supported.");
     return;
   }
-  function pickVoices(){
-    const voices=window.speechSynthesis.getVoices();
-    // Try to find a Polish voice
-    polishVoice=voices.find(v=>v.lang==="pl-PL")||voices.find(v=>v.lang.startsWith("pl"))||null;
-    // Try to find an Arabic voice
-    arabicVoice=voices.find(v=>v.lang==="ar-SA")||voices.find(v=>v.lang.startsWith("ar"))||null;
-    
-    if(polishVoice){
-      ttsReady=true;
-      document.getElementById("ttsNotice1").textContent="🔊 Polish voice: "+polishVoice.name;
-      document.getElementById("ttsNotice2").textContent="🔊 Polish voice: "+polishVoice.name;
-    } else if(voices.length>0){
-      ttsReady=true;
-      document.getElementById("ttsNotice1").textContent="⚠️ No Polish voice found — using default voice.";
-      document.getElementById("ttsNotice2").textContent="⚠️ No Polish voice found — using default voice.";
-    }
-    
-    if(arabicVoice){
-      arabicReady=true;
-    }
+  function pickVoices() {
+    const v = window.speechSynthesis.getVoices();
+    polishVoice = v.find(x=>x.lang==="pl-PL")||v.find(x=>x.lang.startsWith("pl"))||null;
+    arabicVoice = v.find(x=>x.lang==="ar-SA")||v.find(x=>x.lang.startsWith("ar"))||null;
+    if (polishVoice) { ttsReady=true; ["ttsNotice1","ttsNotice2"].forEach(id=>document.getElementById(id).textContent="Polish voice: "+polishVoice.name); }
+    else if (v.length>0) { ttsReady=true; ["ttsNotice1","ttsNotice2"].forEach(id=>document.getElementById(id).textContent="No Polish voice found, using default."); }
+    if (arabicVoice) arabicReady=true;
   }
   pickVoices();
-  window.speechSynthesis.onvoiceschanged=pickVoices;
+  window.speechSynthesis.onvoiceschanged = pickVoices;
 }
 
-function speakPolish(page){
-  if(!('speechSynthesis' in window))return;
+const SVG_IDLE=`<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>`;
+const SVG_BUSY=`<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM16.5 3v2.23c2.89 1.1 5 3.9 5 7.27s-2.11 6.17-5 7.27V22c4.01-1.26 7-5.1 7-9.5s-2.99-8.24-7-9.5z"/></svg>`;
+
+function _speak(text, isArabic, btnEl, idleHTML) {
+  if (!("speechSynthesis" in window)) return;
   window.speechSynthesis.cancel();
-  const text=page===1?deck1[cur1].p:deck2[cur2].p;
-  const btn=document.getElementById("ttsBtn"+page);
-  const utt=new SpeechSynthesisUtterance(text);
-  if(polishVoice)utt.voice=polishVoice;
-  utt.lang="pl-PL";
-  utt.rate=0.85;
+  const utt = new SpeechSynthesisUtterance(text);
+  if (isArabic) { if (arabicVoice) utt.voice=arabicVoice; utt.lang="ar-SA"; utt.rate=0.8; }
+  else          { if (polishVoice) utt.voice=polishVoice; utt.lang="pl-PL"; utt.rate=0.85; }
   utt.pitch=1;
-  btn.classList.add("speaking");
-  btn.innerHTML=`<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM16.5 3v2.23c2.89 1.1 5 3.9 5 7.27s-2.11 6.17-5 7.27V22c4.01-1.26 7-5.1 7-9.5s-2.99-8.24-7-9.5z"/></svg> Listening`;
-  utt.onend=()=>{
-    btn.classList.remove("speaking");
-    btn.innerHTML=`<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg> Listen`;
-  };
-  utt.onerror=()=>{
-    btn.classList.remove("speaking");
-    btn.innerHTML=`<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg> Listen`;
-  };
+  btnEl.classList.add("speaking");
+  btnEl.innerHTML = SVG_BUSY + " Listening";
+  const reset=()=>{btnEl.classList.remove("speaking"); btnEl.innerHTML=idleHTML;};
+  utt.onend=reset; utt.onerror=reset;
+  window.speechSynthesis.speak(utt);
+}
+function speakPolish(page) {
+  const c=page===1?deck1[cur1]:deck2[cur2];
+  _speak(c.p,false,document.getElementById("ttsBtn"+page),SVG_IDLE+" Listen");
+}
+function speakArabic(page) {
+  const c=page===1?deck1[cur1]:deck2[cur2];
+  const id=page===1?"arabicBtn1":"arabicBtn2Front";
+  _speak(c.a,true,document.getElementById(id),SVG_IDLE+" Listen Arabic");
+}
+function speakPolishText(text) {
+  if (!("speechSynthesis" in window)) return;
+  window.speechSynthesis.cancel();
+  const utt=new SpeechSynthesisUtterance(text);
+  if (polishVoice) utt.voice=polishVoice; utt.lang="pl-PL"; utt.rate=0.85;
   window.speechSynthesis.speak(utt);
 }
 
-function speakArabic(page){
-  if(!('speechSynthesis' in window))return;
-  window.speechSynthesis.cancel();
-  let btnId,text;
-  if(page===1){
-    text=deck1[cur1].a;
-    btnId="arabicBtn1";
-  } else {
-    text=deck2[cur2].a;
-    btnId="arabicBtn2Front";
-  }
-  const btn=document.getElementById(btnId);
-  const utt=new SpeechSynthesisUtterance(text);
-  if(arabicVoice)utt.voice=arabicVoice;
-  utt.lang="ar-SA";
-  utt.rate=0.8;
-  utt.pitch=1;
-  btn.classList.add("speaking");
-  btn.innerHTML=`<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM16.5 3v2.23c2.89 1.1 5 3.9 5 7.27s-2.11 6.17-5 7.27V22c4.01-1.26 7-5.1 7-9.5s-2.99-8.24-7-9.5z"/></svg> Listening`;
-  utt.onend=()=>{
-    btn.classList.remove("speaking");
-    btn.innerHTML=`<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg> Listen Arabic`;
+/* =====================================================================
+   PAGE 1 — Polish -> Arabic
+   ===================================================================== */
+let cur1=0, flipped1=false, deck1=[];
+
+function _addTab(wrap, label, count, active, onclickFn) {
+  const b = document.createElement("button");
+  b.className = "tab" + (active ? " active" : "");
+  b.innerHTML = label + ` <span style="opacity:0.45;font-size:10px">${count}</span>`;
+  b.onclick = () => {
+    wrap.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+    b.classList.add("active");
+    onclickFn();
   };
-  utt.onerror=()=>{
-    btn.classList.remove("speaking");
-    btn.innerHTML=`<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg> Listen Arabic`;
-  };
-  window.speechSynthesis.speak(utt);
+  wrap.appendChild(b);
 }
 
-/* ===== PAGE 1 ===== */
-let cur1=0,flipped1=false,deck1=[...all];
-
-function buildTabs1(){
-  const wrap=document.getElementById("tabs1");
-  wrap.innerHTML="";
+function buildTabs1() {
+  const w=document.getElementById("tabs1"); w.innerHTML="";
+  _addTab(w,"All",all.length,true,()=>selectTheme1("all"));
   themes.forEach(th=>{
-    const b=document.createElement("button");
-    b.className="tab"+(th.id==="all"?" active":"");
-    const count=th.id==="all"?all.length:all.filter(c=>c.t===th.id).length;
-    b.innerHTML=`${th.icon?th.icon+" ":""}${th.label} <span style="opacity:0.45;font-size:10px">${count}</span>`;
-    b.onclick=()=>selectTheme1(th.id,b);
-    wrap.appendChild(b);
+    const n=all.filter(c=>c.t===th.id).length;
+    if(n===0)return;
+    _addTab(w,(th.icon?th.icon+" ":"")+th.label,n,false,()=>selectTheme1(th.id));
   });
 }
-function selectTheme1(id,btn){
-  document.querySelectorAll("#tabs1 .tab").forEach(b=>b.classList.remove("active"));
-  btn.classList.add("active");
+function selectTheme1(id){
   deck1=id==="all"?[...all]:all.filter(c=>c.t===id);
   cur1=0;flipped1=false;
-  document.getElementById("inner1").classList.remove("flipped");
-  render1();
+  document.getElementById("inner1").classList.remove("flipped");render1();
 }
 function render1(){
   const c=deck1[cur1];
@@ -466,53 +534,40 @@ function render1(){
   document.getElementById("fr").textContent=c.r;
   const col=themeColors[c.t]||"#555";
   const fk=document.getElementById("fk");
-  fk.textContent=c.k;
-  fk.style.background=col+"22";
-  fk.style.color=col;
-  fk.style.borderColor=col+"44";
+  fk.textContent=c.k;fk.style.background=col+"22";fk.style.color=col;fk.style.borderColor=col+"44";
   document.getElementById("ft").textContent=themeLabels[c.t]||"";
   document.getElementById("ba").textContent=c.a;
   document.getElementById("bat").textContent=c.at||"";
   document.getElementById("be").textContent=c.e;
   document.getElementById("prog1").textContent=(cur1+1)+" / "+deck1.length;
-  // reset TTS buttons
-  const btn=document.getElementById("ttsBtn1");
-  btn.classList.remove("speaking");
-  btn.innerHTML=`<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg> Listen`;
-  const abtn=document.getElementById("arabicBtn1");
-  abtn.classList.remove("speaking");
-  abtn.innerHTML=`<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg> Listen Arabic`;
+  document.getElementById("ttsBtn1").classList.remove("speaking");
+  document.getElementById("ttsBtn1").innerHTML=SVG_IDLE+" Listen";
+  document.getElementById("arabicBtn1").classList.remove("speaking");
+  document.getElementById("arabicBtn1").innerHTML=SVG_IDLE+" Listen Arabic";
 }
-function flip1(){
-  flipped1=!flipped1;
-  document.getElementById("inner1").classList.toggle("flipped",flipped1);
-}
+function flip1(){flipped1=!flipped1;document.getElementById("inner1").classList.toggle("flipped",flipped1);}
 function next1(){window.speechSynthesis&&window.speechSynthesis.cancel();cur1=(cur1+1)%deck1.length;flipped1=false;document.getElementById("inner1").classList.remove("flipped");render1();}
 function prev1(){window.speechSynthesis&&window.speechSynthesis.cancel();cur1=(cur1-1+deck1.length)%deck1.length;flipped1=false;document.getElementById("inner1").classList.remove("flipped");render1();}
 function shuffleDeck1(){shuffle(deck1);cur1=0;flipped1=false;document.getElementById("inner1").classList.remove("flipped");render1();}
 
-/* ===== PAGE 2 ===== */
-let cur2=0,flipped2=false,deck2=[...all];
+/* =====================================================================
+   PAGE 2 — Arabic -> Polish
+   ===================================================================== */
+let cur2=0, flipped2=false, deck2=[];
 
 function buildTabs2(){
-  const wrap=document.getElementById("tabs2");
-  wrap.innerHTML="";
+  const w=document.getElementById("tabs2"); w.innerHTML="";
+  _addTab(w,"All",all.length,true,()=>selectTheme2("all"));
   themes.forEach(th=>{
-    const b=document.createElement("button");
-    b.className="tab"+(th.id==="all"?" active":"");
-    const count=th.id==="all"?all.length:all.filter(c=>c.t===th.id).length;
-    b.innerHTML=`${th.icon?th.icon+" ":""}${th.label} <span style="opacity:0.45;font-size:10px">${count}</span>`;
-    b.onclick=()=>selectTheme2(th.id,b);
-    wrap.appendChild(b);
+    const n=all.filter(c=>c.t===th.id).length;
+    if(n===0)return;
+    _addTab(w,(th.icon?th.icon+" ":"")+th.label,n,false,()=>selectTheme2(th.id));
   });
 }
-function selectTheme2(id,btn){
-  document.querySelectorAll("#tabs2 .tab").forEach(b=>b.classList.remove("active"));
-  btn.classList.add("active");
+function selectTheme2(id){
   deck2=id==="all"?[...all]:all.filter(c=>c.t===id);
   cur2=0;flipped2=false;
-  document.getElementById("inner2").classList.remove("flipped");
-  render2();
+  document.getElementById("inner2").classList.remove("flipped");render2();
 }
 function render2(){
   const c=deck2[cur2];
@@ -523,51 +578,135 @@ function render2(){
   document.getElementById("rfr").textContent=c.r;
   const col=themeColors[c.t]||"#555";
   const rfk=document.getElementById("rfk");
-  rfk.textContent=c.k;
-  rfk.style.background=col+"22";
-  rfk.style.color=col;
-  rfk.style.borderColor=col+"44";
+  rfk.textContent=c.k;rfk.style.background=col+"22";rfk.style.color=col;rfk.style.borderColor=col+"44";
   document.getElementById("rft").textContent=themeLabels[c.t]||"";
   document.getElementById("prog2").textContent=(cur2+1)+" / "+deck2.length;
-  // reset TTS buttons
-  const btn=document.getElementById("ttsBtn2");
-  btn.classList.remove("speaking");
-  btn.innerHTML=`<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg> Listen`;
-  const abtn=document.getElementById("arabicBtn2Front");
-  abtn.classList.remove("speaking");
-  abtn.innerHTML=`<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg> Listen Arabic`;
+  document.getElementById("ttsBtn2").classList.remove("speaking");
+  document.getElementById("ttsBtn2").innerHTML=SVG_IDLE+" Listen";
+  document.getElementById("arabicBtn2Front").classList.remove("speaking");
+  document.getElementById("arabicBtn2Front").innerHTML=SVG_IDLE+" Listen Arabic";
 }
-function flip2(){
-  flipped2=!flipped2;
-  document.getElementById("inner2").classList.toggle("flipped",flipped2);
-}
+function flip2(){flipped2=!flipped2;document.getElementById("inner2").classList.toggle("flipped",flipped2);}
 function next2(){window.speechSynthesis&&window.speechSynthesis.cancel();cur2=(cur2+1)%deck2.length;flipped2=false;document.getElementById("inner2").classList.remove("flipped");render2();}
 function prev2(){window.speechSynthesis&&window.speechSynthesis.cancel();cur2=(cur2-1+deck2.length)%deck2.length;flipped2=false;document.getElementById("inner2").classList.remove("flipped");render2();}
 function shuffleDeck2(){shuffle(deck2);cur2=0;flipped2=false;document.getElementById("inner2").classList.remove("flipped");render2();}
 
-/* ===== Page switcher ===== */
+/* =====================================================================
+   PAGE 3 — Spelling test
+   ===================================================================== */
+let spellDeck=[], spellCur=0, spellCorrect=0, spellTotal=0, spellChecked=false;
+
+function buildTabs3(){
+  const w=document.getElementById("tabs3"); w.innerHTML="";
+  _addTab(w,"All",all.length,true,()=>selectTheme3("all"));
+  themes.forEach(th=>{
+    const n=all.filter(c=>c.t===th.id).length;
+    if(n===0)return;
+    _addTab(w,(th.icon?th.icon+" ":"")+th.label,n,false,()=>selectTheme3(th.id));
+  });
+}
+function selectTheme3(id){
+  spellDeck=id==="all"?shuffle([...all]):shuffle(all.filter(c=>c.t===id));
+  spellCur=0;spellChecked=false;renderSpell();
+}
+function renderSpell(){
+  const c=spellDeck[spellCur];
+  document.getElementById("sp-arabic").textContent=c.a;
+  document.getElementById("sp-arTranslit").textContent=c.at||"";
+  document.getElementById("sp-english").textContent=c.e;
+  const inp=document.getElementById("spellInput");
+  inp.value=""; inp.className="spell-input";
+  document.getElementById("spellResult").className="spell-result";
+  document.getElementById("checkBtn").textContent="Check";
+  spellChecked=false;
+  setTimeout(()=>inp.focus(),80);
+}
+function checkSpelling(){
+  if(spellChecked){nextSpell();return;}
+  const inp=document.getElementById("spellInput");
+  const raw=inp.value;
+  const correct=spellDeck[spellCur].p;
+  const lenient=document.getElementById("lenientMode").checked;
+  const noPunct=document.getElementById("ignorePunct").checked;
+  let u=raw.trim(), r=correct.trim();
+  if(noPunct){u=removePunct(u);r=removePunct(r);}
+  if(lenient){u=normalisePolish(u);r=normalisePolish(r);}
+  else{u=u.toLowerCase();r=r.toLowerCase();}
+  const ok=u===r;
+  spellTotal++; if(ok)spellCorrect++;
+  spellChecked=true;
+  inp.classList.add(ok?"is-correct":"is-wrong");
+  const res=document.getElementById("spellResult");
+  res.className="spell-result show "+(ok?"correct-result":"wrong-result");
+  document.getElementById("resultIcon").textContent=ok?"✅":"❌";
+  document.getElementById("resultVerdict").textContent=ok?"Correct!":"Not quite…";
+  document.getElementById("resultAnswer").innerHTML=ok
+    ?`<strong>${correct}</strong>`
+    :`Correct: <strong>${correct}</strong>`;
+  document.getElementById("resultPron").textContent=spellDeck[spellCur].r;
+  document.getElementById("spellCorrect").textContent=spellCorrect;
+  document.getElementById("spellTotal").textContent=spellTotal;
+  document.getElementById("checkBtn").textContent="Next ›";
+  if(document.getElementById("autoSpeak").checked) speakPolishText(correct);
+}
+function nextSpell(){spellCur=(spellCur+1)%spellDeck.length;spellChecked=false;renderSpell();}
+function resetSpellScore(){spellCorrect=0;spellTotal=0;document.getElementById("spellCorrect").textContent="0";document.getElementById("spellTotal").textContent="0";}
+function onSpellKey(e){if(e.key==="Enter"){e.preventDefault();checkSpelling();}}
+
+/* =====================================================================
+   PAGE SWITCH
+   ===================================================================== */
 function switchPage(n){
   document.getElementById("page1").style.display=n===1?"block":"none";
   document.getElementById("page2").style.display=n===2?"block":"none";
+  document.getElementById("page3").style.display=n===3?"block":"none";
   document.getElementById("btnPage1").classList.toggle("active",n===1);
   document.getElementById("btnPage2").classList.toggle("active",n===2);
+  document.getElementById("btnPage3").classList.toggle("active",n===3);
   window.speechSynthesis&&window.speechSynthesis.cancel();
+  if(n===3&&spellDeck.length===0&&all.length>0){buildTabs3();selectTheme3("all");}
 }
 
-/* ===== Keyboard navigation ===== */
+/* =====================================================================
+   KEYBOARD NAVIGATION
+   ===================================================================== */
 document.addEventListener("keydown",e=>{
-  const p1=document.getElementById("page1").style.display!=="none";
-  if(e.key==="ArrowRight"||e.key==="l"||e.key==="L"){p1?next1():next2();}
-  else if(e.key==="ArrowLeft"||e.key==="h"||e.key==="H"){p1?prev1():prev2();}
-  else if(e.key===" "||e.key==="f"||e.key==="F"){e.preventDefault();p1?flip1():flip2();}
+  const pg=document.getElementById("page1").style.display!=="none"?1
+          :document.getElementById("page2").style.display!=="none"?2:3;
+  if(pg===3)return;
+  if(e.key==="ArrowRight"||e.key==="l"||e.key==="L"){pg===1?next1():next2();}
+  else if(e.key==="ArrowLeft"||e.key==="h"||e.key==="H"){pg===1?prev1():prev2();}
+  else if(e.key===" "||e.key==="f"||e.key==="F"){e.preventDefault();pg===1?flip1():flip2();}
 });
 
-/* ===== Init ===== */
-buildTabs1();
-buildTabs2();
-render1();
-render2();
-initTTS();
+/* =====================================================================
+   SWIPE SUPPORT
+   ===================================================================== */
+function addSwipe(el,onLeft,onRight,onTap){
+  let sx=0,sy=0;
+  el.addEventListener("touchstart",e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;},{passive:true});
+  el.addEventListener("touchend",e=>{
+    const dx=e.changedTouches[0].clientX-sx;
+    const dy=e.changedTouches[0].clientY-sy;
+    if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>40){dx<0?onLeft():onRight();}
+    else if(Math.abs(dx)<10&&Math.abs(dy)<10){onTap();}
+  });
+}
+
+/* =====================================================================
+   INIT
+   ===================================================================== */
+(async()=>{
+  const ok=await loadFromFirebase();
+  if(!ok)return;
+  document.getElementById("loadingOverlay").classList.add("hidden");
+  deck1=[...all]; deck2=[...all]; spellDeck=shuffle([...all]);
+  buildTabs1();buildTabs2();buildTabs3();
+  render1();render2();
+  addSwipe(document.getElementById("scene1"),next1,prev1,flip1);
+  addSwipe(document.getElementById("scene2"),next2,prev2,flip2);
+  initTTS();
+})();
 </script>
 </body>
 </html>
