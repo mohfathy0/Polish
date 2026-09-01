@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Mianownik — Polish Grammar</title>
+  <title>Narzędnik — Polish Grammar</title>
   <link rel="stylesheet" href="style.css">
   <style>
     /* ── layout ── */
@@ -29,9 +29,12 @@
               padding:3px 11px; border-radius:10px; border:.5px solid; margin-bottom:10px; font-weight:600; }
     .gar { font-size:22px; font-weight:600; color:#ddd; text-align:center; margin:4px 0; }
     .gat { font-size:12px; color:#666; text-align:center; margin-bottom:2px; font-style:italic; }
-    .gen { font-size:14px; color:#888; text-align:center; margin-bottom:12px; }
+    .gen { font-size:14px; color:#888; text-align:center; margin-bottom:8px; }
+    .gnom-ref { font-size:12px; color:#555; text-align:center; margin-bottom:8px; }
+    .gnom-ref strong { color:#777; }
     .gframe { font-size:18px; color:#aaa; text-align:center; margin:6px 0 14px; letter-spacing:.02em; }
     .gblank { color:#444; border-bottom:1px dashed #444; padding:0 14px; }
+    .gframe-en { font-size:11px; color:#444; text-align:center; margin-top:-10px; margin-bottom:14px; font-style:italic; }
     /* ── input ── */
     .ginput-row { max-width:540px; margin:0 auto; padding:0 14px; display:flex; gap:8px; }
     .ginput { flex:1; background:#161616; border:.5px solid #2a2a2a; border-radius:12px;
@@ -77,8 +80,9 @@
 <!-- TOP BAR -->
 <div class="gtop">
   <a href="index.html" title="Home">🏠</a>
-  <span class="gtop-title">Mianownik — Nominative</span>
-  <a href="grammar-biernik.html">Biernik →</a>
+  <a href="grammar-biernik.html">← Biernik</a>
+  <span class="gtop-title">Narzędnik — Instrumental</span>
+  <a href="grammar-mianownik-frazy.html">Mianownik phrases →</a>
 </div>
 
 <!-- LOADING -->
@@ -99,25 +103,27 @@
   <!-- FILTER TABS -->
   <div class="gfilter">
     <button class="gtab active" id="tab-all"    onclick="selectFilter('all')">All <small id="cnt-all">0</small></button>
-    <button class="gtab"        id="tab-m_anim" onclick="selectFilter('m_anim')" style="--gc:#4a9acc">M.Anim <small id="cnt-m_anim">0</small></button>
-    <button class="gtab"        id="tab-m_inan" onclick="selectFilter('m_inan')" style="--gc:#6acc7a">M.Inan <small id="cnt-m_inan">0</small></button>
-    <button class="gtab"        id="tab-f"      onclick="selectFilter('f')"      style="--gc:#cc6aac">Fem. <small id="cnt-f">0</small></button>
-    <button class="gtab"        id="tab-n"      onclick="selectFilter('n')"      style="--gc:#ccac6a">Neut. <small id="cnt-n">0</small></button>
+    <button class="gtab"        id="tab-m_anim" onclick="selectFilter('m_anim')">M.Anim <small id="cnt-m_anim">0</small></button>
+    <button class="gtab"        id="tab-m_inan" onclick="selectFilter('m_inan')">M.Inan <small id="cnt-m_inan">0</small></button>
+    <button class="gtab"        id="tab-f"      onclick="selectFilter('f')">Fem. <small id="cnt-f">0</small></button>
+    <button class="gtab"        id="tab-n"      onclick="selectFilter('n')">Neut. <small id="cnt-n">0</small></button>
   </div>
 
   <!-- QUESTION CARD -->
   <div class="gcard" id="qcard">
     <div style="text-align:center"><span class="gbadge" id="badge">—</span></div>
-    <div class="gar"    id="qar"></div>
-    <div class="gat"    id="qat"></div>
-    <div class="gen"    id="qen"></div>
-    <div class="gframe">To jest <span class="gblank">___</span>.</div>
+    <div class="gar"     id="qar"></div>
+    <div class="gat"     id="qat"></div>
+    <div class="gen"     id="qen"></div>
+    <div class="gnom-ref">Nominative: <strong id="qnom">—</strong></div>
+    <div class="gframe" id="gframe">Jestem <span class="gblank">___</span>.</div>
+    <div class="gframe-en" id="gframe-en">I am (a) ___.</div>
   </div>
 
   <!-- INPUT ROW -->
   <div class="ginput-row" style="margin-top:10px">
     <input id="ginput" class="ginput" type="text" autocomplete="off" autocorrect="off"
-           spellcheck="false" placeholder="Type the Polish nominative…"
+           spellcheck="false" placeholder="Type the Polish instrumental…"
            onkeydown="onKey(event)">
     <button class="gcheck" id="gcheck" onclick="checkAnswer()">Check</button>
   </div>
@@ -158,6 +164,18 @@ const GENDER = {
   n:      { label:"Neuter",              color:"#ccac6a", bg:"#2a2a1a", border:"#4a4a2a" },
 };
 
+/* Sentence frames by semantic category — "Jestem ___" (I am ___) only makes
+   sense for people, so other categories get an instrumental-taking verb that
+   fits their meaning (opiekuję się = look after, częstuję się = help myself to,
+   interesuję się = I'm interested in, przed ___ = in front of). */
+const FRAMES = {
+  person: { pl:"Jestem ___.",           en:"I am (a) ___." },
+  animal: { pl:"Opiekuję się ___.",     en:"I look after (a) ___." },
+  place:  { pl:"Spotykamy się przed ___.", en:"We meet in front of (the) ___." },
+  food:   { pl:"Częstuję się ___.",     en:"I help myself to (some) ___." },
+  object: { pl:"Interesuję się ___.",   en:"I'm interested in (a) ___." },
+};
+
 let allNouns = [], deck = [], cur = 0, correct = 0, total = 0, checked = false;
 let attempted = false, attempts = 0;
 let currentFilter = "all";
@@ -173,6 +191,11 @@ let currentFilter = "all";
       return;
     }
     allNouns = snap.docs.map(d => d.data());
+    if (!allNouns.some(n => n.instr)) {
+      showNoInstrData();
+      return;
+    }
+    allNouns = allNouns.filter(n => n.instr);
     buildCounts();
     buildDeck("all");
     render();
@@ -246,6 +269,12 @@ function render() {
   document.getElementById("qar").textContent = noun.ar  || "";
   document.getElementById("qat").textContent = noun.at  || "";
   document.getElementById("qen").textContent = noun.en  || "";
+  document.getElementById("qnom").textContent = noun.nom || "—";
+
+  const frame = FRAMES[noun.cat] || FRAMES.object;
+  document.getElementById("gframe").innerHTML =
+    frame.pl.replace("___", '<span class="gblank">___</span>');
+  document.getElementById("gframe-en").textContent = frame.en;
 
   const inp = document.getElementById("ginput");
   inp.value = "";
@@ -276,7 +305,7 @@ function checkAnswer() {
     return r;
   };
 
-  const ok = norm(raw) === norm(noun.nom);
+  const ok = norm(raw) === norm(noun.instr);
   attempts++;
   if (!attempted) { attempted = true; total++; if (ok) correct++; updateScore(); }
 
@@ -287,8 +316,8 @@ function checkAnswer() {
     inp.className = "ginput g-ok";
     box.className = "gresult-box ok";
     document.getElementById("rVerdict").textContent = "✅ Correct!";
-    document.getElementById("rAnswer").innerHTML = `<strong>${noun.nom}</strong>`;
-    document.getElementById("rRule").textContent = noun.r_nom || "";
+    document.getElementById("rAnswer").innerHTML = `<strong>${noun.instr}</strong>`;
+    document.getElementById("rRule").textContent = noun.r_instr || "";
     document.getElementById("gresult").style.display = "block";
     document.getElementById("gcheck").textContent = "Next →";
   } else if (attempts < 2) {
@@ -305,8 +334,8 @@ function checkAnswer() {
     inp.className = "ginput g-err";
     box.className = "gresult-box err";
     document.getElementById("rVerdict").textContent = "❌ Not quite…";
-    document.getElementById("rAnswer").innerHTML = `Correct answer: <strong>${noun.nom}</strong>`;
-    document.getElementById("rRule").textContent = noun.r_nom || "";
+    document.getElementById("rAnswer").innerHTML = `Correct answer: <strong>${noun.instr}</strong>`;
+    document.getElementById("rRule").textContent = noun.r_instr || "";
     document.getElementById("gresult").style.display = "block";
     document.getElementById("gcheck").textContent = "Next →";
   }
@@ -333,6 +362,16 @@ function showEmpty() {
       No grammar nouns found.<br>
       Go to <a href="seed.html">seed.html</a> and choose<br>
       <em>Grammar Nouns</em> from the dropdown, then seed.
+    </div>`;
+}
+
+function showNoInstrData() {
+  document.getElementById("loadWrap").innerHTML = `
+    <div class="gempty">
+      No Narzędnik (instrumental) data yet.<br>
+      Add <code>instr</code> (and optionally <code>r_instr</code>) fields<br>
+      to the grammar nouns dataset and re-seed via <a href="seed.html">seed.html</a><br>
+      to unlock this drill.
     </div>`;
 }
 

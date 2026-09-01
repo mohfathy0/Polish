@@ -79,9 +79,10 @@
 
 <!-- TOP BAR -->
 <div class="gtop">
+  <a href="index.html" title="Home">🏠</a>
   <a href="grammar-mianownik.html">← Mianownik</a>
   <span class="gtop-title">Biernik — Accusative</span>
-  <a href="index.html">Flashcards →</a>
+  <a href="grammar-narzednik.html">Narzędnik →</a>
 </div>
 
 <!-- LOADING -->
@@ -172,6 +173,7 @@ const FRAMES = {
 };
 
 let allNouns = [], deck = [], cur = 0, correct = 0, total = 0, checked = false;
+let attempted = false, attempts = 0;
 let currentFilter = "all";
 
 /* ── init ── */
@@ -217,7 +219,7 @@ function selectFilter(f) {
     el.style.background = "#1a1a1a";
   }
   buildDeck(f);
-  cur = 0; correct = 0; total = 0; checked = false;
+  cur = 0; correct = 0; total = 0; checked = false; attempted = false; attempts = 0;
   document.getElementById("gresult").style.display = "none";
   updateScore();
   render();
@@ -273,6 +275,8 @@ function render() {
   document.getElementById("gcheck").textContent = "Check";
   document.getElementById("progress").textContent = (cur % deck.length + 1) + " / " + deck.length;
   checked = false;
+  attempted = false;
+  attempts = 0;
 }
 
 /* ── check ── */
@@ -293,22 +297,39 @@ function checkAnswer() {
   };
 
   const ok = norm(raw) === norm(noun.acc);
-  total++;
-  if (ok) correct++;
-  checked = true;
-
-  inp.classList.add(ok ? "g-ok" : "g-err");
+  attempts++;
+  if (!attempted) { attempted = true; total++; if (ok) correct++; updateScore(); }
 
   const box = document.getElementById("gresult-box");
-  box.className = "gresult-box " + (ok ? "ok" : "err");
-  document.getElementById("rVerdict").textContent = ok ? "✅ Correct!" : "❌ Not quite…";
-  document.getElementById("rAnswer").innerHTML = ok
-    ? `<strong>${noun.acc}</strong>`
-    : `Correct answer: <strong>${noun.acc}</strong>`;
-  document.getElementById("rRule").textContent = noun.r_acc || "";
-  document.getElementById("gresult").style.display = "block";
-  document.getElementById("gcheck").textContent = "Next →";
-  updateScore();
+
+  if (ok) {
+    checked = true;
+    inp.className = "ginput g-ok";
+    box.className = "gresult-box ok";
+    document.getElementById("rVerdict").textContent = "✅ Correct!";
+    document.getElementById("rAnswer").innerHTML = `<strong>${noun.acc}</strong>`;
+    document.getElementById("rRule").textContent = noun.r_acc || "";
+    document.getElementById("gresult").style.display = "block";
+    document.getElementById("gcheck").textContent = "Next →";
+  } else if (attempts < 2) {
+    inp.className = "ginput g-err";
+    box.className = "gresult-box err";
+    document.getElementById("rVerdict").textContent = "❌ Not quite — try again!";
+    document.getElementById("rAnswer").innerHTML = "";
+    document.getElementById("rRule").textContent = "";
+    document.getElementById("gresult").style.display = "block";
+    document.getElementById("gcheck").textContent = "Check";
+    inp.select();
+  } else {
+    checked = true;
+    inp.className = "ginput g-err";
+    box.className = "gresult-box err";
+    document.getElementById("rVerdict").textContent = "❌ Not quite…";
+    document.getElementById("rAnswer").innerHTML = `Correct answer: <strong>${noun.acc}</strong>`;
+    document.getElementById("rRule").textContent = noun.r_acc || "";
+    document.getElementById("gresult").style.display = "block";
+    document.getElementById("gcheck").textContent = "Next →";
+  }
 }
 
 function nextQ() {

@@ -99,6 +99,7 @@
 
 <!-- TOP BAR -->
 <div class="gtop">
+  <a href="index.html" title="Home">🏠</a>
   <a href="grammar-mianownik-frazy.html">← Mianownik phrases</a>
   <span class="gtop-title">Biernik — Adj + Noun</span>
   <a href="index.html">Home →</a>
@@ -209,6 +210,7 @@ const GENDER = {
 };
 
 let deck = [], cur = 0, correct = 0, total = 0, checked = false;
+let attempted = false, attempts = 0;
 
 /* ── init ── */
 (function init() {
@@ -254,7 +256,7 @@ function selectFilter(f) {
     el.style.color = "#ccc"; el.style.borderColor = "#555"; el.style.background = "#1a1a1a";
   }
   buildDeck(f);
-  cur = 0; correct = 0; total = 0; checked = false;
+  cur = 0; correct = 0; total = 0; checked = false; attempted = false; attempts = 0;
   document.getElementById("gresult").style.display = "none";
   updateScore();
   render();
@@ -285,6 +287,8 @@ function render() {
   document.getElementById("gcheck").textContent      = "Check";
   document.getElementById("progress").textContent    = (cur % deck.length + 1) + " / " + deck.length;
   checked = false;
+  attempted = false;
+  attempts = 0;
 }
 
 /* ── check ── */
@@ -306,14 +310,29 @@ function checkAnswer() {
 
   const expected = p.acc_adj + " " + p.acc_noun;
   const ok = norm(raw) === norm(expected);
-  total++;
-  if (ok) correct++;
-  checked = true;
+  attempts++;
+  if (!attempted) { attempted = true; total++; if (ok) correct++; updateScore(); }
 
-  inp.classList.add(ok ? "g-ok" : "g-err");
+  const box = document.getElementById("gresult-box");
+
+  if (!ok && attempts < 2) {
+    inp.className = "ginput g-err";
+    box.className = "gresult-box err";
+    document.getElementById("rVerdict").textContent = "❌ Not quite — try again!";
+    document.getElementById("rAnswer").innerHTML = "";
+    document.getElementById("rFullSent").innerHTML = "";
+    document.getElementById("rNoChange").style.display = "none";
+    document.getElementById("rRule").textContent = "";
+    document.getElementById("gresult").style.display = "block";
+    document.getElementById("gcheck").textContent = "Check";
+    inp.select();
+    return;
+  }
+
+  checked = true;
+  inp.className = "ginput " + (ok ? "g-ok" : "g-err");
 
   const isNoChange = (p.nom_adj === p.acc_adj && p.nom_noun === p.acc_noun);
-  const box = document.getElementById("gresult-box");
   box.className = "gresult-box " + (ok ? "ok" : "err");
   document.getElementById("rVerdict").textContent = ok ? "✅ Correct!" : "❌ Not quite…";
 
@@ -339,7 +358,6 @@ function checkAnswer() {
   document.getElementById("rRule").textContent = p.r_acc || "";
   document.getElementById("gresult").style.display = "block";
   document.getElementById("gcheck").textContent = "Next →";
-  updateScore();
 }
 
 function nextQ() {
